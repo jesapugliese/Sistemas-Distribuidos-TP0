@@ -34,7 +34,9 @@ do
     networks:
       - testing_net
     depends_on:
-      - server" >> $NOMBRE_ARCHIVO
+      - server
+    volumes:
+      - ./client/config.yaml:/config.yaml" >> $NOMBRE_ARCHIVO
 done
 
 echo "
