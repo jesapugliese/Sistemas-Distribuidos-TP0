@@ -78,5 +78,7 @@ class Server:
             logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         except socket.timeout:
             return None
+        except OSError:
+            return None
 
         return c
