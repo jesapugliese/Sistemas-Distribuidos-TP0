@@ -39,3 +39,21 @@ volumes:
 De esta forma tanto el filesystem del container y el Host OS trabajan sobre el mismo archivo.  
 A su vez se evitó copiar el archivo de configuración en la imagen. Esto se logró editando el comando `COPY` dentro de los archivos Dockerfile del cliente y el servidor.  
 Finalmente, se eliminó la configuración de las variables de entorno de _log levels_ del YAML para permitir que se tomen aquellas definidas en los archivos de configuración. 
+
+### Ejercicio N°3:
+
+Se definió un script de bash `validar-echo-server.sh` para verificar el correcto funcionamiento del servidor utilizando el comando `netcat` para interactuar con el mismo. Dado que el servidor es un echo server, el script manda un mensaje al servidor y espera recibir el mismo mensaje enviado.  
+En caso de que la validación sea exitosa se imprime: `action: test_echo_server | result: success`, de lo contrario se imprime: `action: test_echo_server | result: fail`.  
+Para evitar la dependencia de instalación de netcat en la máquina host y la exposición del puerto del servidor, se mandaron los mensajes al servidor a través de un container temporal de Docker de la imagen predefinida BusyBox (que incluye comandos como `sh` y `nc`) conectado a la misma red interna creada por Docker Compose: `tp0_testing_net`. 
+
+#### Ejecución:
+
+1. Darle permisos de ejecución al archivo:  
+   ```bash
+   chmod +x validar-echo-server.sh
+   ```
+
+2. Ejecutar el programa:  
+   ```bash
+   ./validar-echo-server.sh
+   ```
