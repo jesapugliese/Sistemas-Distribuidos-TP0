@@ -37,5 +37,5 @@ volumes:
 ```
 
 De esta forma tanto el filesystem del container y el Host OS trabajan sobre el mismo archivo.  
-A su vez se evitó copiar el archivo de configuración en la imagen. Esto se logró editando el comando `COPY` dentro de los archivos Dockerfile del cliente y el servidor. Esta última modificación era innecesaria (pues un volumen tiene prioridad sobre el filesystem de la imagen si se monta en el mismo path), pero es más limpio y eficiente al copiar únicamente los archivos necesarios.  
+A su vez se evitó copiar el archivo de configuración en la imagen. Esto se logró editando el comando `COPY` dentro de los archivos Dockerfile del cliente y el servidor.  
 Finalmente, se eliminó la configuración de las variables de entorno de _log levels_ del YAML para permitir que se tomen aquellas definidas en los archivos de configuración. 

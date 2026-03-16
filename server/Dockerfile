@@ -1,7 +1,5 @@
 FROM python:3.9.7-slim
-WORKDIR /
-COPY server/common /common
-COPY server/tests /tests
-COPY server/main.py /
+COPY server /
+RUN rm /server/config.ini
 RUN python -m unittest tests/test_common.py
 ENTRYPOINT ["/bin/sh"]
