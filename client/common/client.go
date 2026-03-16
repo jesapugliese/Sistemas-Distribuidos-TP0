@@ -46,6 +46,7 @@ func NewClient(config ClientConfig) *Client {
 			client.conn.Close()
 		}
 		log.Infof("action: signal_handler | result: success | signal: SIGTERM | client_id: %v", client.config.ID)
+		os.Exit(0)
 	}()
 
 	return client
