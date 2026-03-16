@@ -1,4 +1,5 @@
 FROM python:3.9.7-slim
+WORKDIR /
 COPY server/common /common
 COPY server/tests /tests
 COPY server/main.py /
