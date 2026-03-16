@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/op/go-logging"
 )
@@ -26,11 +29,25 @@ type Client struct {
 }
 
 // NewClient Initializes a new client receiving the configuration
-// as a parameter
+// as a parameter. It also initializes the signal handler to gracefully 
+// shutdown the client when SIGTERM is received
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
 	}
+
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGTERM)
+
+	go func() {
+		<-signalChannel
+		log.Infof("action: signal_handler | result: in_progress | signal: SIGTERM | client_id: %v", client.config.ID)
+		if client.conn != nil {
+			client.conn.Close()
+		}
+		log.Infof("action: signal_handler | result: success | signal: SIGTERM | client_id: %v", client.config.ID)
+	}()
+
 	return client
 }
 
