@@ -35,20 +35,6 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
 	}
-
-	signalChannel := make(chan os.Signal, 1)
-	signal.Notify(signalChannel, syscall.SIGTERM)
-
-	go func() {
-		<-signalChannel
-		log.Infof("action: signal_handler | result: in_progress | signal: SIGTERM | client_id: %v", client.config.ID)
-		if client.conn != nil {
-			client.conn.Close()
-		}
-		log.Infof("action: signal_handler | result: success | signal: SIGTERM | client_id: %v", client.config.ID)
-		os.Exit(0)
-	}()
-
 	return client
 }
 
@@ -70,9 +56,19 @@ func (c *Client) createClientSocket() error {
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGTERM)
+
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+		select {
+		case <-signalChannel:
+			log.Infof("action: sigterm_received | result: success | client_id: %v", c.config.ID)
+			return
+		default:
+		}
+		
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
