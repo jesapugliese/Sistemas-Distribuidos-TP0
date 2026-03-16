@@ -77,7 +77,6 @@ class Server:
             c, addr = self._server_socket.accept()
             logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         except socket.timeout:
-            logging.info('action: accept_connections | result: timeout')
             return None
 
         return c
