@@ -42,6 +42,8 @@ class Server:
 
         while True:
             self._client_socket = self.__accept_new_connection()
+            if not self._client_socket:
+                continue
             self.__handle_client_connection()
 
     def __handle_client_connection(self):
