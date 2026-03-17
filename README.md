@@ -57,3 +57,14 @@ Para evitar la dependencia de instalación de netcat en la máquina host y la ex
    ```bash
    ./validar-echo-server.sh
    ```
+
+### Ejercicio N°4:
+
+Para que el servidor y el cliente terminen de forma graceful al recibir la signal SIGTERM, se modificó el código de ambos servicios para definir un handler que se ejecute cuando esa signal es recibida.  
+
+#### Servidor:  
+- El handler cierra los sockets y termina el proceso con código de salida 0.  
+- Se configuró un timeout de 0.5 segundos en el socket del servidor para evitar que la llamada a `accept()` quede bloqueada indefinidamente mientras espera nuevas conexiones. Esto permite que el servidor pueda reaccionar al shutdown y finalizar correctamente antes del tiempo límite definido en el `Makefile`, donde al detener los contenedores se espera como máximo un segundo antes de forzar su terminación.
+
+#### Cliente:  
+- Se definió un canal de comunicación por el que se recibirá la signal SIGTERM. Al recibirla, se detiene el client loop. 
