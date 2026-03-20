@@ -29,6 +29,11 @@ do
     entrypoint: /client
     environment:
       - CLI_ID=$i
+      - NOMBRE=nombre$i
+      - APELLIDO=apellido$i
+      - DOCUMENTO=3000000$i
+      - NACIMIENTO=2000-01-$i
+      - NUMERO=757$i
     networks:
       - testing_net
     depends_on:
