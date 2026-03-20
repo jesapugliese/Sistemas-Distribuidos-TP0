@@ -7,21 +7,26 @@ import (
 )
 
 type ClientProtocol struct {
-	conn net.Conn
-	// TODO: apuestaSerializer ApuestaSerializer
-	// TODO: tcpProtocol TCPProtocol
+	apuestaSerializer ApuestaSerializer
+	tcpProtocol       TCPProtocol
 }
 
 func NewClientProtocol(conn net.Conn) ClientProtocol {
 	return ClientProtocol{
-		conn: conn,
+		apuestaSerializer: NewApuestaSerializer(),
+		tcpProtocol:       NewTCPProtocol(conn),
 	}
 }
 
 func (cp ClientProtocol) Send(apuesta utils.Apuesta) error {
-	// TODO:
-	// 1. Serializar la apuesta usando apuestaSerializer
-	// 2. Enviar la apuesta serializada usando tcpProtocol
+	apuestaSerialized, err := cp.apuestaSerializer.Serialize(apuesta)
+	if err != nil {
+		return err
+	}
+	err = cp.tcpProtocol.SendAll(apuestaSerialized)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
