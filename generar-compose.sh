@@ -18,7 +18,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     networks:
-      - testing_net" > $NOMBRE_ARCHIVO
+      - testing_net
+    volumes:
+      - ./server/config.ini:/config.ini" > $NOMBRE_ARCHIVO
 
 for i in $(seq 1 $CLIENTES)
 do
