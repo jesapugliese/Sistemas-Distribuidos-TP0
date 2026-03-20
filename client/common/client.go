@@ -2,10 +2,12 @@ package common
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -19,12 +21,8 @@ type ClientConfig struct {
 }
 
 type Client struct {
-	config ClientConfig
-	// TODO: agencia_de_loteria AgenciaDeLoteria
-}
-
-type ClientInterface interface {
-	Start() error
+	config            ClientConfig
+	agenciaDeQuiniela AgenciaDeQuiniela
 }
 
 // InitConfig Function that uses viper library to parse configuration parameters.
@@ -105,16 +103,43 @@ func NewClient() *Client {
 		ID:            v.GetString("id"),
 	}
 
-	return &Client{config: config}
+	nombreAgencia := "Agencia de Quiniela " + config.ID
+	agenciaDeQuiniela := NewAgenciaDeQuiniela(nombreAgencia, config.ID)
+
+	return &Client{config, *agenciaDeQuiniela}
 }
 
-func (c *Client) Start() error {
-	// TODO:
-	// 1. Crear un socket para el cliente
-	// 2. Crear la apuesta
-	// 3. Crear un sender para que la agencia de loteria pueda enviarle
-	//    al servidor el mensaje con la apuesta
-	// 4. Crear un receiver para que la agencia de loteria pueda recibir
-	//    del servidor el mensaje con el resultado de la apuesta
-	return nil
+// CreateClientSocket Initializes client socket. In case of
+// failure, error is printed in stdout/stderr and returned to the caller.
+func (c *Client) createClientSocket() (net.Conn, error) {
+	conn, err := net.Dial("tcp", c.config.ServerAddress)
+	if err != nil {
+		log.Criticalf(
+			"action: connect | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return nil, err
+	}
+	return conn, nil
+}
+
+func (c *Client) Start() {
+	clientSocket, err := c.createClientSocket()
+	if err != nil {
+		log.Criticalf("%s", err)
+	}
+
+	clientProtocol := communication.NewClientProtocol(clientSocket)
+
+	err = c.agenciaDeQuiniela.RegistrarApuesta(clientProtocol)
+	if err != nil {
+		log.Criticalf("%s", err)
+	}
+	_, err = c.agenciaDeQuiniela.RecibirResultado(clientProtocol)
+	if err != nil {
+		log.Criticalf("%s", err)
+	}
+
+	// log.Infof("%s", result)
 }
