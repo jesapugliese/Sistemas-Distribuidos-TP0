@@ -32,7 +32,7 @@ func (a *AgenciaDeQuiniela) CrearApuesta() (utils.Apuesta, error) {
 
 	apellido := os.Getenv("CLI_APELLIDO")
 
-	documento, err := strconv.Atoi(os.Getenv("CLI_DOCUMENTO"))
+	documento, err := strconv.ParseUint(os.Getenv("CLI_DOCUMENTO"), 10, 32)
 	if err != nil {
 		return utils.Apuesta{}, err
 	}
@@ -40,13 +40,18 @@ func (a *AgenciaDeQuiniela) CrearApuesta() (utils.Apuesta, error) {
 		return utils.Apuesta{}, fmt.Errorf("Documento inválido")
 	}
 
-	nacimiento := os.Getenv("CLI_NACIMIENTO")
-	_, err = time.Parse("2006-01-02", nacimiento)
+	nacimientoString := os.Getenv("CLI_NACIMIENTO")
+	nacimientoParsed, err := time.Parse("2006-01-02", nacimientoString)
 	if err != nil {
-		return utils.Apuesta{}, fmt.Errorf("Nacimiento inválido")
+		return utils.Apuesta{}, fmt.Errorf("Fecha de nacimiento inválida")
+	}
+	nacimiento := utils.Fecha{
+		Anio: uint16(nacimientoParsed.Year()),
+		Mes:  uint8(nacimientoParsed.Month()),
+		Dia:  uint8(nacimientoParsed.Day()),
 	}
 
-	numero, err := strconv.Atoi(os.Getenv("CLI_NUMERO"))
+	numero, err := strconv.ParseUint(os.Getenv("CLI_NUMERO"), 10, 16)
 	if err != nil {
 		return utils.Apuesta{}, err
 	}
@@ -57,9 +62,9 @@ func (a *AgenciaDeQuiniela) CrearApuesta() (utils.Apuesta, error) {
 	return utils.Apuesta{
 		Nombre:     nombre,
 		Apellido:   apellido,
-		Documento:  documento,
+		Documento:  uint32(documento),
 		Nacimiento: nacimiento,
-		Numero:     numero,
+		Numero:     uint16(numero),
 	}, nil
 }
 
