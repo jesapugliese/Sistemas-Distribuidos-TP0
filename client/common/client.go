@@ -142,7 +142,6 @@ func (c *Client) Start() {
 			}
 			return "fail"
 		}(),
-		c.config.ID,
 		betStoreResponse.Document,
 		betStoreResponse.Number,
 	)
