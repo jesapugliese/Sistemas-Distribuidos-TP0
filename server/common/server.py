@@ -4,7 +4,7 @@ import signal
 import socket
 
 from configparser import ConfigParser
-from central_de_loteria import CentralDeLoteriaNacional
+from common.central_de_loteria import CentralDeLoteriaNacional
 from communication.server_protocol import ServerProtocol
 
 

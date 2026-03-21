@@ -1,5 +1,4 @@
-import socket
-from server.communication.bet_serializer import BetSerializer
+from communication.bet_serializer import BetSerializer
 from communication.tcp_protocol import TCPProtocol
 from common.utils import Bet
 

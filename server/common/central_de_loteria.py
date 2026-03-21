@@ -1,4 +1,4 @@
-from utils import BetStoreResponse, store_bets
+from common.utils import BetStoreResponse, store_bets
 
 
 class CentralDeLoteriaNacional:
