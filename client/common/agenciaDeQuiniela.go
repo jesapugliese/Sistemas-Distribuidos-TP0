@@ -25,17 +25,17 @@ func NewAgenciaDeQuiniela(name string, id uint8) *AgenciaDeQuiniela {
 // CreateBet reads the bet information from environment variables,
 // validates it and creates an Bet struct.
 func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
-	firstName := os.Getenv("CLI_NOMBRE")
+	firstName := os.Getenv("NOMBRE")
 	if firstName == "" {
 		return utils.Bet{}, fmt.Errorf("First name cannot be empty")
 	}
 
-	lastName := os.Getenv("CLI_APELLIDO")
+	lastName := os.Getenv("APELLIDO")
 	if lastName == "" {
 		return utils.Bet{}, fmt.Errorf("Last name cannot be empty")
 	}
 
-	document, err := strconv.ParseUint(os.Getenv("CLI_DOCUMENTO"), 10, 32)
+	document, err := strconv.ParseUint(os.Getenv("DOCUMENTO"), 10, 32)
 	if err != nil {
 		return utils.Bet{}, fmt.Errorf("Error at parsing document: %v", err)
 	}
@@ -43,10 +43,10 @@ func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
 		return utils.Bet{}, fmt.Errorf("Invalid document")
 	}
 
-	birthdateString := os.Getenv("CLI_NACIMIENTO")
+	birthdateString := os.Getenv("NACIMIENTO")
 	birthdateParsed, err := time.Parse("2006-01-02", birthdateString)
 	if err != nil {
-		return utils.Bet{}, fmt.Errorf("Invalid birthdate")
+		return utils.Bet{}, fmt.Errorf("Invalid birthdate: %v", err)
 	}
 	birthdate := utils.Date{
 		Year:  uint16(birthdateParsed.Year()),
@@ -54,7 +54,7 @@ func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
 		Day:   uint8(birthdateParsed.Day()),
 	}
 
-	number, err := strconv.ParseUint(os.Getenv("CLI_NUMERO"), 10, 16)
+	number, err := strconv.ParseUint(os.Getenv("NUMERO"), 10, 16)
 	if err != nil {
 		return utils.Bet{}, fmt.Errorf("Error at parsing bet number: %v", err)
 	}
