@@ -36,10 +36,11 @@ class Server:
 
         Server that accept a new connections and establishes a
         communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
+        finishes, servers starts to accept new connections again.
+        This repeats until reaching 5 connections.
         """
 
-        while True:
+        for _ in range(5):
             client_socket = self._accept_new_connection()
             if not client_socket:
                 continue
