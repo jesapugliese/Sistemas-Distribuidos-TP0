@@ -1,10 +1,17 @@
-from utils import Bet
+from utils import store_bets
 
 
 class CentralDeLoteriaNacional:
     def __init__(self):
         pass
     
-    # TODO: recibir_apuesta(self, server_protocol): Bet
+    def recv_msg_store_bets(self, server_protocol):
+        """
+        Receive a bet from a client and store it in the system.
+        """
+        
+        bet = server_protocol.recv_bet()
+        store_bets([bet])
+        server_protocol.send_store_success(bet.document, bet.number)
 
-    # TODO: enviar_resultado(self, server_protocol):
+        return bet.document, bet.number
