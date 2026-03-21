@@ -17,6 +17,7 @@ func NewApuestaSerializer() ApuestaSerializer {
 // Serialize converts an Apuesta struct into a byte slice that can be sent
 // over the network.
 // Serialization format:
+//   - Largo total: 2 bytes (integer)
 //   - AgenciaDeQuinielaID: 1 byte (integer)
 //   - Nombre: variable length string (preceded by its 1-byte length)
 //   - Apellido: variable length string (preceded by its 1-byte length)
@@ -28,6 +29,17 @@ func NewApuestaSerializer() ApuestaSerializer {
 //   - Numero: 2 bytes (integer)
 func (as ApuestaSerializer) Serialize(apuesta utils.Apuesta) ([]byte, error) {
 	var serialized []byte
+
+	// Serializar Largo total
+	largoTotal := 1 + // AgenciaDeQuinielaID
+		1 + len(apuesta.Nombre) + // Nombre
+		1 + len(apuesta.Apellido) + // Apellido
+		4 + // Documento
+		2 + 1 + 1 + // Nacimiento
+		2 // Numero
+	var tmp2 [2]byte
+	binary.BigEndian.PutUint16(tmp2[:], uint16(largoTotal))
+	serialized = append(serialized, tmp2[:]...)
 
 	// Serializar AgenciaDeQuinielaID
 	serialized = append(serialized, byte(apuesta.AgenciaDeQuinielaID))
@@ -60,7 +72,6 @@ func (as ApuestaSerializer) Serialize(apuesta utils.Apuesta) ([]byte, error) {
 	serialized = append(serialized, tmp4[:]...)
 
 	// Serializar Numero
-	var tmp2 [2]byte
 	binary.BigEndian.PutUint16(tmp2[:], uint16(apuesta.Numero))
 	serialized = append(serialized, tmp2[:]...)
 
