@@ -2,7 +2,6 @@ package communication
 
 import (
 	"encoding/binary"
-	"fmt"
 	"net"
 )
 
@@ -17,23 +16,20 @@ func NewTCPProtocol(conn net.Conn) TCPProtocol {
 // SendAll sends the given data over the TCP connection. It first
 // sends the length of the data (2 bytes) followed by the actual data.
 func (tcpProt TCPProtocol) SendAll(data []byte) error {
-	// Send the length of the data first (2 bytes)
 	var lengthBytes [2]byte
-
 	length := uint16(len(data))
 	binary.BigEndian.PutUint16(lengthBytes[:], length)
-
-	n, err := tcpProt.conn.Write(lengthBytes[:])
+	err := tcpProt.sendExact(lengthBytes[:])
 	if err != nil {
 		return err
 	}
-	if n != 2 {
-		return fmt.Errorf("Failed to send data length")
-	}
 
-	// Send the total data
+	return tcpProt.sendExact(data)
+}
+
+// sendExact sends exactly the given data over the TCP connection.
+func (tcpProt TCPProtocol) sendExact(data []byte) error {
 	totalSend := 0
-
 	for totalSend < len(data) {
 		n, err := tcpProt.conn.Write(data[totalSend:])
 		if err != nil {
@@ -41,7 +37,6 @@ func (tcpProt TCPProtocol) SendAll(data []byte) error {
 		}
 		totalSend += n
 	}
-
 	return nil
 }
 
