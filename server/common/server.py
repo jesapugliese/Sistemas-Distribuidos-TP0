@@ -55,13 +55,16 @@ class Server:
         """
 
         try:
+            logging.info('action: recibir_mensaje | result: in_progress')
             document, number = self._central_de_loteria.recv_msg_store_bets(self._server_protocol)
             logging.info('action: apuesta_almacenada | result: success | '
                          f'dni: {document} | numero: {number}')
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
+            logging.info('action: close_client_connection | result: in_progress')
             self._server_protocol.close_client_connection()
+            logging.info('action: close_client_connection | result: success')
 
     def _accept_new_connection(self):
         """
@@ -76,8 +79,10 @@ class Server:
             client_socket, addr = self._server_socket.accept()
             logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         except socket.timeout:
+            logging.warning('action: accept_connections | result: fail')
             return None
         except OSError:
+            logging.error('action: accept_connections | result: fail')
             return None
         
         return client_socket

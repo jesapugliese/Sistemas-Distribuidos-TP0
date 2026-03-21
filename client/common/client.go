@@ -125,16 +125,18 @@ func (c *Client) Start() {
 	default:
 	}
 
+	log.Infof("action: registrar_apuesta | result: in_progress")
 	err = c.agenciaDeQuiniela.StoreBet(clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
+	log.Infof("action: registrar_apuesta | result: success")
 
+	log.Infof("action: apuesta_almacenada | result: in_progress")
 	betStoreResponse, err := c.agenciaDeQuiniela.RecvBetStoreResponse(clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
-
 	log.Infof("action: apuesta_almacenada | result: %s | dni: %v | number: %v",
 		func() string {
 			if betStoreResponse.Success {
