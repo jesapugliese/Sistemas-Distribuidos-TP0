@@ -40,12 +40,14 @@ class Server:
         This repeats until reaching 5 connections.
         """
 
-        for _ in range(5):
+        clients_handled = 0
+        while clients_handled < 5:
             client_socket = self._accept_new_connection()
             if not client_socket:
                 continue
             self._server_protocol.update_client_socket(client_socket)
             self._handle_client_connection()
+            clients_handled += 1
 
     def _handle_client_connection(self):
         """
