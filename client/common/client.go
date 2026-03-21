@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
@@ -91,9 +92,13 @@ func NewClient() *Client {
 		ServerAddress: v.GetString("server.address"),
 		ID:            v.GetString("id"),
 	}
+	id, err := strconv.ParseUint(config.ID, 10, 8)
+	if err != nil {
+		log.Criticalf("Invalid client ID: %s", config.ID)
+	}
 
 	nombreAgencia := "Agencia de Quiniela " + config.ID
-	agenciaDeQuiniela := NewAgenciaDeQuiniela(nombreAgencia, config.ID)
+	agenciaDeQuiniela := NewAgenciaDeQuiniela(nombreAgencia, uint8(id))
 
 	return &Client{config, *agenciaDeQuiniela}
 }

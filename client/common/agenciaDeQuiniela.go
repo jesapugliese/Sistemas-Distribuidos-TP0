@@ -12,12 +12,12 @@ import (
 
 type AgenciaDeQuiniela struct {
 	nombre string
-	id     string
+	id     uint8
 }
 
 // NewAgenciaDeQuiniela initializes a new AgenciaDeQuiniela struct with
 // the given name and id.
-func NewAgenciaDeQuiniela(nombre string, id string) *AgenciaDeQuiniela {
+func NewAgenciaDeQuiniela(nombre string, id uint8) *AgenciaDeQuiniela {
 	return &AgenciaDeQuiniela{
 		nombre: nombre,
 		id:     id,
@@ -60,11 +60,12 @@ func (a *AgenciaDeQuiniela) CrearApuesta() (utils.Apuesta, error) {
 	}
 
 	return utils.Apuesta{
-		Nombre:     nombre,
-		Apellido:   apellido,
-		Documento:  uint32(documento),
-		Nacimiento: nacimiento,
-		Numero:     uint16(numero),
+		AgenciaDeQuinielaID: a.id,
+		Nombre:              nombre,
+		Apellido:            apellido,
+		Documento:           uint32(documento),
+		Nacimiento:          nacimiento,
+		Numero:              uint16(numero),
 	}, nil
 }
 

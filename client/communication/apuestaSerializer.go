@@ -17,6 +17,7 @@ func NewApuestaSerializer() ApuestaSerializer {
 // Serialize converts an Apuesta struct into a byte slice that can be sent
 // over the network.
 // Serialization format:
+//   - AgenciaDeQuinielaID: 1 byte (integer)
 //   - Nombre: variable length string (preceded by its 1-byte length)
 //   - Apellido: variable length string (preceded by its 1-byte length)
 //   - Documento: 4 bytes (integer)
@@ -27,6 +28,9 @@ func NewApuestaSerializer() ApuestaSerializer {
 //   - Numero: 2 bytes (integer)
 func (as ApuestaSerializer) Serialize(apuesta utils.Apuesta) ([]byte, error) {
 	var serialized []byte
+
+	// Serializar AgenciaDeQuinielaID
+	serialized = append(serialized, byte(apuesta.AgenciaDeQuinielaID))
 
 	// Serializar Nombre
 	nombreBytes := []byte(apuesta.Nombre)
