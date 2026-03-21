@@ -26,14 +26,20 @@ func NewAgenciaDeQuiniela(name string, id uint8) *AgenciaDeQuiniela {
 // validates it and creates an Bet struct.
 func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
 	firstName := os.Getenv("CLI_NOMBRE")
+	if firstName == "" {
+		return utils.Bet{}, fmt.Errorf("First name cannot be empty")
+	}
 
 	lastName := os.Getenv("CLI_APELLIDO")
+	if lastName == "" {
+		return utils.Bet{}, fmt.Errorf("Last name cannot be empty")
+	}
 
 	document, err := strconv.ParseUint(os.Getenv("CLI_DOCUMENTO"), 10, 32)
 	if err != nil {
-		return utils.Bet{}, err
+		return utils.Bet{}, fmt.Errorf("Error at parsing document: %v", err)
 	}
-	if document <= 0 || document > 99999999 {
+	if document > 99999999 {
 		return utils.Bet{}, fmt.Errorf("Invalid document")
 	}
 
@@ -50,9 +56,9 @@ func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
 
 	number, err := strconv.ParseUint(os.Getenv("CLI_NUMERO"), 10, 16)
 	if err != nil {
-		return utils.Bet{}, err
+		return utils.Bet{}, fmt.Errorf("Error at parsing bet number: %v", err)
 	}
-	if number <= 0 || number > 9999 {
+	if number > 9999 {
 		return utils.Bet{}, fmt.Errorf("Invalid bet number")
 	}
 
