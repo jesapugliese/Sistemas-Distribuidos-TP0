@@ -30,6 +30,6 @@ class ServerProtocol:
     def update_client_socket(self, client_socket):
         self._client_socket = client_socket
 
-    def close(self):
+    def close_client_socket(self):
         if self._client_socket:
             self._client_socket.close()

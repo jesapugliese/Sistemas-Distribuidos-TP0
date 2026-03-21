@@ -63,7 +63,7 @@ class Server:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
             logging.info('action: close_client_connection | result: in_progress')
-            self._server_protocol.close_client_connection()
+            self._server_protocol.close_client_socket()
             logging.info('action: close_client_connection | result: success')
 
     def _accept_new_connection(self):
@@ -137,7 +137,7 @@ class Server:
 
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
         self._server_socket.close()
-        self._server_protocol.close()
+        self._server_protocol.close_client_socket()
         logging.info('action: signal_handler | result: success | signal: SIGTERM')
 
         exit(0)
