@@ -3,8 +3,10 @@ package common
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
 	"github.com/op/go-logging"
@@ -104,6 +106,16 @@ func NewClient() *Client {
 }
 
 func (c *Client) Start() {
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGTERM)
+
+	select {
+	case <-signalChannel:
+		log.Infof("action: sigterm_received | result: success | client_id: %v", c.config.ID)
+		return
+	default:
+	}
+
 	clientProtocol, err := communication.NewClientProtocol(c.config.ServerAddress, c.config.ID)
 	if err != nil {
 		log.Criticalf("%s", err)
