@@ -57,3 +57,8 @@ func (cp ClientProtocol) RecvBetStoreResponse() (utils.BetStoreResponse, error) 
 	}
 	return cp.betSerializer.DeserializeBetStoreResponse(betStoreResponseBytes)
 }
+
+// Close closes the TCP connection.
+func (cp ClientProtocol) Close() {
+	cp.tcpProtocol.Close()
+}

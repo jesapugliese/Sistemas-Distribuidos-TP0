@@ -71,3 +71,7 @@ func (tcpProt TCPProtocol) recvExact(n int) ([]byte, error) {
 	}
 	return data, nil
 }
+
+func (tcpProt TCPProtocol) Close() {
+	tcpProt.conn.Close()
+}

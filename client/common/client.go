@@ -112,17 +112,17 @@ func NewClient() *Client {
 func (c *Client) Start() {
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGTERM)
+	clientProtocol, err := communication.NewClientProtocol(c.config.ServerAddress, c.config.ID)
+	if err != nil {
+		log.Criticalf("%s", err)
+	}
 
 	select {
 	case <-signalChannel:
 		log.Infof("action: sigterm_received | result: success | client_id: %v", c.config.ID)
+		clientProtocol.Close()
 		return
 	default:
-	}
-
-	clientProtocol, err := communication.NewClientProtocol(c.config.ServerAddress, c.config.ID)
-	if err != nil {
-		log.Criticalf("%s", err)
 	}
 
 	err = c.agenciaDeQuiniela.StoreBet(clientProtocol)
@@ -146,4 +146,6 @@ func (c *Client) Start() {
 		betStoreResponse.Document,
 		betStoreResponse.Number,
 	)
+
+	clientProtocol.Close()
 }
