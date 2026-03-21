@@ -15,8 +15,6 @@ type AgenciaDeQuiniela struct {
 	id   uint8
 }
 
-// NewAgenciaDeQuiniela initializes a new AgenciaDeQuiniela struct with
-// the given name and id.
 func NewAgenciaDeQuiniela(name string, id uint8) *AgenciaDeQuiniela {
 	return &AgenciaDeQuiniela{
 		name: name,
@@ -25,8 +23,7 @@ func NewAgenciaDeQuiniela(name string, id uint8) *AgenciaDeQuiniela {
 }
 
 // CreateBet reads the bet information from environment variables,
-// validates it and creates an Bet struct. If any of the fields is
-// invalid an error is returned.
+// validates it and creates an Bet struct.
 func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
 	firstName := os.Getenv("CLI_NOMBRE")
 
@@ -69,6 +66,8 @@ func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
 	}, nil
 }
 
+// StoreBet creates a bet using the CreateBet method and sends it to the server
+// using the given ClientProtocol.
 func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol) error {
 	bet, err := a.CreateBet()
 	if err != nil {
@@ -78,6 +77,7 @@ func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol
 	return nil
 }
 
-func (a *AgenciaDeQuiniela) RecvResult(clientProtocol communication.ClientProtocol) (string, error) {
-	return clientProtocol.RecvResult()
+// RecvBetStoreResponse receives the response from the server after sending a bet.
+func (a *AgenciaDeQuiniela) RecvBetStoreResponse(clientProtocol communication.ClientProtocol) (utils.BetStoreResponse, error) {
+	return clientProtocol.RecvBetStoreResponse()
 }

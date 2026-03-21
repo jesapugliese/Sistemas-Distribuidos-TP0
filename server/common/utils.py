@@ -24,6 +24,13 @@ class Bet:
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
 
+""" Response object for bet storage operation. """
+class BetStoreResponse:
+    def __init__(self, success: bool, document: int, number: int):
+        self.success = success
+        self.document = document
+        self.number = number
+
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:
     return bet.number == LOTTERY_WINNER_NUMBER

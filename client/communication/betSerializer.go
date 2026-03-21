@@ -66,3 +66,26 @@ func (as BetSerializer) SerializeBet(bet utils.Bet) ([]byte, error) {
 
 	return serialized, nil
 }
+
+// DeserializeBetStoreResponse deserializes the response received from the server after
+// sending a request for storage of a bet. It extracts the success status, document,
+// and number from the byte slice.
+// Data format:
+// - success: 1 byte (value 1 for success)
+// - document: 4 bytes (integer)
+// - number: 2 bytes (integer)
+func (as BetSerializer) DeserializeBetStoreResponse(betStoreResponseBytes []byte) (utils.BetStoreResponse, error) {
+	if len(betStoreResponseBytes) != 7 {
+		return utils.BetStoreResponse{}, fmt.Errorf("Invalid data length for bet store response")
+	}
+
+	success := betStoreResponseBytes[0]
+	document := binary.BigEndian.Uint32(betStoreResponseBytes[1:5])
+	number := binary.BigEndian.Uint16(betStoreResponseBytes[5:7])
+
+	return utils.BetStoreResponse{
+		Success:  success == 1,
+		Document: document,
+		Number:   number,
+	}, nil
+}

@@ -105,6 +105,10 @@ func NewClient() *Client {
 	return &Client{config, *agenciaDeQuiniela}
 }
 
+// Start is the main method of the client. It is responsible for starting the client and
+// handling the SIGTERM signal to gracefully shutdown the client. It creates a new
+// ClientProtocol to communicate with the server, sends the bet and receives the
+// response from the server. Finally, it logs the result of the bet storage operation.
 func (c *Client) Start() {
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGTERM)
@@ -126,10 +130,20 @@ func (c *Client) Start() {
 		log.Criticalf("%s", err)
 	}
 
-	_, err = c.agenciaDeQuiniela.RecvResult(clientProtocol)
+	betStoreResponse, err := c.agenciaDeQuiniela.RecvBetStoreResponse(clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
 
-	// log.Infof("%s", result)
+	log.Infof("action: apuesta_almacenada | result: %s | dni: %v | number: %v",
+		func() string {
+			if betStoreResponse.Success {
+				return "success"
+			}
+			return "fail"
+		}(),
+		c.config.ID,
+		betStoreResponse.Document,
+		betStoreResponse.Number,
+	)
 }

@@ -23,8 +23,7 @@ func NewClientProtocol(serverAddress string, clientID string) (ClientProtocol, e
 	}, nil
 }
 
-// CreateClientSocket Initializes client socket. In case of
-// failure, return error.
+// CreateClientSocket Initializes client socket.
 func createClientSocket(serverAddress string, clientID string) (net.Conn, error) {
 	conn, err := net.Dial("tcp", serverAddress)
 	if err != nil {
@@ -38,7 +37,6 @@ func createClientSocket(serverAddress string, clientID string) (net.Conn, error)
 }
 
 // Send serializes the given bet and sends it to the server using TCPProtocol.
-// If any error occurs during serialization or sending, it is returned to the caller.
 func (cp ClientProtocol) SendBet(bet utils.Bet) error {
 	betSerialized, err := cp.betSerializer.SerializeBet(bet)
 	if err != nil {
@@ -51,9 +49,11 @@ func (cp ClientProtocol) SendBet(bet utils.Bet) error {
 	return nil
 }
 
-func (cp ClientProtocol) RecvResult() (string, error) {
-	// TODO
-	// 1. Recibir la respuesta usando tcpProtocol
-	// 2. Retornar la respuesta como string
-	return "", nil
+// RecvBetStoreResponse receives the response from the server after sending a bet.
+func (cp ClientProtocol) RecvBetStoreResponse() (utils.BetStoreResponse, error) {
+	betStoreResponseBytes, err := cp.tcpProtocol.RecvAll()
+	if err != nil {
+		return utils.BetStoreResponse{}, err
+	}
+	return cp.betSerializer.DeserializeBetStoreResponse(betStoreResponseBytes)
 }
