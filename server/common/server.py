@@ -136,7 +136,8 @@ class Server:
         """
 
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
-        self._server_protocol.shutdown()
+        self._server_socket.close()
+        self._server_protocol.close()
         logging.info('action: signal_handler | result: success | signal: SIGTERM')
 
         exit(0)
