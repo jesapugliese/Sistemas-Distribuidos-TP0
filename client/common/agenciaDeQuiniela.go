@@ -11,73 +11,73 @@ import (
 )
 
 type AgenciaDeQuiniela struct {
-	nombre string
-	id     uint8
+	name string
+	id   uint8
 }
 
 // NewAgenciaDeQuiniela initializes a new AgenciaDeQuiniela struct with
 // the given name and id.
-func NewAgenciaDeQuiniela(nombre string, id uint8) *AgenciaDeQuiniela {
+func NewAgenciaDeQuiniela(name string, id uint8) *AgenciaDeQuiniela {
 	return &AgenciaDeQuiniela{
-		nombre: nombre,
-		id:     id,
+		name: name,
+		id:   id,
 	}
 }
 
-// CrearApuesta reads the bet information from environment variables,
-// validates it and creates an Apuesta struct. If any of the fields is
+// CreateBet reads the bet information from environment variables,
+// validates it and creates an Bet struct. If any of the fields is
 // invalid an error is returned.
-func (a *AgenciaDeQuiniela) CrearApuesta() (utils.Apuesta, error) {
-	nombre := os.Getenv("CLI_NOMBRE")
+func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
+	firstName := os.Getenv("CLI_NOMBRE")
 
-	apellido := os.Getenv("CLI_APELLIDO")
+	lastName := os.Getenv("CLI_APELLIDO")
 
-	documento, err := strconv.ParseUint(os.Getenv("CLI_DOCUMENTO"), 10, 32)
+	document, err := strconv.ParseUint(os.Getenv("CLI_DOCUMENTO"), 10, 32)
 	if err != nil {
-		return utils.Apuesta{}, err
+		return utils.Bet{}, err
 	}
-	if documento <= 0 || documento > 99999999 {
-		return utils.Apuesta{}, fmt.Errorf("Documento inválido")
+	if document <= 0 || document > 99999999 {
+		return utils.Bet{}, fmt.Errorf("Invalid document")
 	}
 
-	nacimientoString := os.Getenv("CLI_NACIMIENTO")
-	nacimientoParsed, err := time.Parse("2006-01-02", nacimientoString)
+	birthdateString := os.Getenv("CLI_NACIMIENTO")
+	birthdateParsed, err := time.Parse("2006-01-02", birthdateString)
 	if err != nil {
-		return utils.Apuesta{}, fmt.Errorf("Fecha de nacimiento inválida")
+		return utils.Bet{}, fmt.Errorf("Invalid birthdate")
 	}
-	nacimiento := utils.Fecha{
-		Anio: uint16(nacimientoParsed.Year()),
-		Mes:  uint8(nacimientoParsed.Month()),
-		Dia:  uint8(nacimientoParsed.Day()),
+	birthdate := utils.Date{
+		Year:  uint16(birthdateParsed.Year()),
+		Month: uint8(birthdateParsed.Month()),
+		Day:   uint8(birthdateParsed.Day()),
 	}
 
-	numero, err := strconv.ParseUint(os.Getenv("CLI_NUMERO"), 10, 16)
+	number, err := strconv.ParseUint(os.Getenv("CLI_NUMERO"), 10, 16)
 	if err != nil {
-		return utils.Apuesta{}, err
+		return utils.Bet{}, err
 	}
-	if numero <= 0 || numero > 9999 {
-		return utils.Apuesta{}, fmt.Errorf("Número inválido")
+	if number <= 0 || number > 9999 {
+		return utils.Bet{}, fmt.Errorf("Invalid bet number")
 	}
 
-	return utils.Apuesta{
-		AgenciaDeQuinielaID: a.id,
-		Nombre:              nombre,
-		Apellido:            apellido,
-		Documento:           uint32(documento),
-		Nacimiento:          nacimiento,
-		Numero:              uint16(numero),
+	return utils.Bet{
+		AgencyID:  a.id,
+		FirstName: firstName,
+		LastName:  lastName,
+		Document:  uint32(document),
+		Birthdate: birthdate,
+		Number:    uint16(number),
 	}, nil
 }
 
-func (a *AgenciaDeQuiniela) RegistrarApuesta(clientProtocol communication.ClientProtocol) error {
-	apuesta, err := a.CrearApuesta()
+func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol) error {
+	bet, err := a.CreateBet()
 	if err != nil {
 		return err
 	}
-	clientProtocol.Send(apuesta)
+	clientProtocol.SendBet(bet)
 	return nil
 }
 
-func (a *AgenciaDeQuiniela) RecibirResultado(clientProtocol communication.ClientProtocol) (string, error) {
-	return clientProtocol.Receive()
+func (a *AgenciaDeQuiniela) RecvResult(clientProtocol communication.ClientProtocol) (string, error) {
+	return clientProtocol.RecvResult()
 }

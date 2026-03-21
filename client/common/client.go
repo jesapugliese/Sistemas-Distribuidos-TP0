@@ -99,8 +99,8 @@ func NewClient() *Client {
 		log.Criticalf("Invalid client ID: %s", config.ID)
 	}
 
-	nombreAgencia := "Agencia de Quiniela " + config.ID
-	agenciaDeQuiniela := NewAgenciaDeQuiniela(nombreAgencia, uint8(id))
+	agencyName := "Agencia de Quiniela " + config.ID
+	agenciaDeQuiniela := NewAgenciaDeQuiniela(agencyName, uint8(id))
 
 	return &Client{config, *agenciaDeQuiniela}
 }
@@ -121,12 +121,12 @@ func (c *Client) Start() {
 		log.Criticalf("%s", err)
 	}
 
-	err = c.agenciaDeQuiniela.RegistrarApuesta(clientProtocol)
+	err = c.agenciaDeQuiniela.StoreBet(clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
 
-	_, err = c.agenciaDeQuiniela.RecibirResultado(clientProtocol)
+	_, err = c.agenciaDeQuiniela.RecvResult(clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
 	}

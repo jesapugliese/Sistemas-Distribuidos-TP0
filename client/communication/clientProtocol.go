@@ -8,8 +8,8 @@ import (
 )
 
 type ClientProtocol struct {
-	apuestaSerializer ApuestaSerializer
-	tcpProtocol       TCPProtocol
+	betSerializer BetSerializer
+	tcpProtocol   TCPProtocol
 }
 
 func NewClientProtocol(serverAddress string, clientID string) (ClientProtocol, error) {
@@ -18,8 +18,8 @@ func NewClientProtocol(serverAddress string, clientID string) (ClientProtocol, e
 		return ClientProtocol{}, err
 	}
 	return ClientProtocol{
-		apuestaSerializer: NewApuestaSerializer(),
-		tcpProtocol:       NewTCPProtocol(clientSocket),
+		betSerializer: NewBetSerializer(),
+		tcpProtocol:   NewTCPProtocol(clientSocket),
 	}, nil
 }
 
@@ -37,21 +37,21 @@ func createClientSocket(serverAddress string, clientID string) (net.Conn, error)
 	return conn, nil
 }
 
-// Send serializes the given Apuesta and sends it to the server using TCPProtocol.
+// Send serializes the given bet and sends it to the server using TCPProtocol.
 // If any error occurs during serialization or sending, it is returned to the caller.
-func (cp ClientProtocol) Send(apuesta utils.Apuesta) error {
-	apuestaSerialized, err := cp.apuestaSerializer.Serialize(apuesta)
+func (cp ClientProtocol) SendBet(bet utils.Bet) error {
+	betSerialized, err := cp.betSerializer.SerializeBet(bet)
 	if err != nil {
 		return err
 	}
-	err = cp.tcpProtocol.SendAll(apuestaSerialized)
+	err = cp.tcpProtocol.SendAll(betSerialized)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (cp ClientProtocol) Receive() (string, error) {
+func (cp ClientProtocol) RecvResult() (string, error) {
 	// TODO
 	// 1. Recibir la respuesta usando tcpProtocol
 	// 2. Retornar la respuesta como string
