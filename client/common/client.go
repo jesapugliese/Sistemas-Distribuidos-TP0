@@ -135,7 +135,7 @@ func (c *Client) Start() {
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
-	log.Infof("action: apuesta_almacenada | result: %s | dni: %v | number: %v",
+	log.Infof("action: apuesta_enviada | result: %s | dni: %v | number: %v",
 		func() string {
 			if betStoreResponse.Success {
 				return "success"
