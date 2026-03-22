@@ -31,17 +31,13 @@ do
     entrypoint: /client
     environment:
       - CLI_ID=$i
-      - NOMBRE=nombre$i
-      - APELLIDO=apellido$i
-      - DOCUMENTO=3000000$i
-      - NACIMIENTO=2000-01-0$i
-      - NUMERO=757$i
     networks:
       - testing_net
     depends_on:
       - server
     volumes:
-      - ./client/config.yaml:/config.yaml" >> $NOMBRE_ARCHIVO
+      - ./client/config.yaml:/config.yaml
+      - ./.data/agency-$i.csv:/data/data.csv" >> $NOMBRE_ARCHIVO
 done
 
 echo "
