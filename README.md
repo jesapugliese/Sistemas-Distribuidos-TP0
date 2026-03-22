@@ -68,3 +68,56 @@ Para que el servidor y el cliente terminen de forma graceful al recibir la signa
 
 #### Cliente:  
 - Se definió un canal de comunicación por el que se recibirá la signal SIGTERM. Al recibirla, se detiene el client loop. 
+
+### Ejercicio N°5:
+
+#### Ejecución:
+
+1. Levantar los containers y ejecutar el programa:  
+   ```bash  
+   make docker-compose-up
+   ```  
+
+2. Ver los logs:  
+   ```bash
+   make docker-compose-logs
+   ```  
+
+3. Detener y eliminar los containers, redes, imagenes y volumenes:  
+   ```bash
+   make docker-compose-down
+   ```
+
+#### Diagrama de Clases:
+
+<p align="center">
+  <img src="img/diagrama_de_clases_server.png" alt="diagrama_de_clases_server"><br>
+  <em>Diagrama de clases del server</em>
+</p>
+
+<p align="center">
+  <img src="img/diagrama_de_clases_client.png" alt="diagrama_de_clases_client"><br>
+  <em>Diagrama de clases del client</em>
+</p>
+
+#### Funcionamiento:
+
+- Se levantan 5 clientes, que corresponden a 5 agencias de quiniela, de acuerdo a la configuración definida en el archivo YAML de Docker Compose. Cada cliente tiene definidas sus respectivas variables de entorno que tienen los campos que representan la apuesta de una persona.  
+- Los campos se envían al servidor a través de un protocolo TCP con una serialización binaria.
+- Para evitar los fenómenos de *short-read* y *short-write*, se recibieron y enviaron los bytes en bucle hasta confirmar que se hubiesen recibido o enviado todos los bytes respectivamente, tanto en client como en server.
+- Al recibir el mensaje, el server lo deserializa y registra la apuesta usando la función `store_bets()`, y luego le manda la confirmación de registro al client.  
+- Finalmente, al recibir la confirmación el client cierra su conexión y el server permanece esperando por conexiones de nuevos clients.  
+
+#### Protocolo de Comunicación:
+
+Para la comunicación entre el client y el server, se utilizo el protocolo de comunicación TCP con una serialización binaria hecha de la siguiente manera:  
+
+<p align="center">
+<img src="img/serializacion_binaria_msg_registrar_apuesta.png" alt="serializacion_binaria_msg_registrar_apuesta" width="700"><br>
+<em>Diagrama serialización del mensaje para registrar una apuesta (client → server)</em>
+</p>
+
+<p align="center">
+<img src="img/serializacion_binaria_msg_registro_apuesta_exitoso.png" alt="serializacion_binaria_msg_registro_apuesta_exitoso" width="350"><br>
+<em>Diagrama serialización del mensaje de respuesta a un registro de apuesta exitoso (server → client)</em>
+</p>
