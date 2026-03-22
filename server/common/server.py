@@ -21,6 +21,7 @@ class Server:
                       f"listen_backlog: {listen_backlog} | "
                       f"logging_level: {logging_level}")
 
+        self._running = True
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
@@ -41,7 +42,7 @@ class Server:
         This repeats until reaching 5 connections.
         """
 
-        while True:
+        while self._running:
             client_socket = self._accept_new_connection()
             if not client_socket:
                 continue
@@ -138,6 +139,5 @@ class Server:
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
         self._server_socket.close()
         self._server_protocol.close_client_socket()
+        self._running = False
         logging.info('action: signal_handler | result: success | signal: SIGTERM')
-
-        exit(0)
