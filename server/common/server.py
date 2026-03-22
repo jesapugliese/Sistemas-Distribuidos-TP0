@@ -24,6 +24,7 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self._server_socket.settimeout(0.5)
 
         self._server_protocol = ServerProtocol()
         self._central_de_loteria = CentralDeLoteriaNacional()
