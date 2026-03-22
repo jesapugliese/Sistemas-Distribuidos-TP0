@@ -83,10 +83,8 @@ class Server:
             client_socket, addr = self._server_socket.accept()
             logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         except socket.timeout:
-            logging.warning('action: accept_connections | result: fail')
             return None
         except OSError:
-            logging.error('action: accept_connections | result: fail')
             return None
         
         return client_socket
