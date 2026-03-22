@@ -22,43 +22,40 @@ func NewAgenciaDeQuiniela(name string, id uint8) *AgenciaDeQuiniela {
 	}
 }
 
-// CreateBet reads the bet information from environment variables,
-// validates it and creates an Bet struct.
-func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
-	firstName := os.Getenv("NOMBRE")
+// CreateBet creates a bet using the given parameters.
+func (a *AgenciaDeQuiniela) CreateBet(firstName, lastName string,
+	document string, birthdate string, number string) (utils.Bet, error) {
 	if firstName == "" {
 		return utils.Bet{}, fmt.Errorf("First name cannot be empty")
 	}
 
-	lastName := os.Getenv("APELLIDO")
 	if lastName == "" {
 		return utils.Bet{}, fmt.Errorf("Last name cannot be empty")
 	}
 
-	document, err := strconv.ParseUint(os.Getenv("DOCUMENTO"), 10, 32)
+	documentToInt, err := strconv.ParseUint(document, 10, 32)
 	if err != nil {
 		return utils.Bet{}, fmt.Errorf("Error at parsing document: %v", err)
 	}
-	if document > 99999999 {
+	if documentToInt > 99999999 {
 		return utils.Bet{}, fmt.Errorf("Invalid document")
 	}
 
-	birthdateString := os.Getenv("NACIMIENTO")
-	birthdateParsed, err := time.Parse("2006-01-02", birthdateString)
+	birthdateParsed, err := time.Parse("2006-01-02", birthdate)
 	if err != nil {
 		return utils.Bet{}, fmt.Errorf("Invalid birthdate: %v", err)
 	}
-	birthdate := utils.Date{
+	birthdateDate := utils.Date{
 		Year:  uint16(birthdateParsed.Year()),
 		Month: uint8(birthdateParsed.Month()),
 		Day:   uint8(birthdateParsed.Day()),
 	}
 
-	number, err := strconv.ParseUint(os.Getenv("NUMERO"), 10, 16)
+	numberToInt, err := strconv.ParseUint(os.Getenv("NUMERO"), 10, 16)
 	if err != nil {
 		return utils.Bet{}, fmt.Errorf("Error at parsing bet number: %v", err)
 	}
-	if number > 9999 {
+	if numberToInt > 9999 {
 		return utils.Bet{}, fmt.Errorf("Invalid bet number")
 	}
 
@@ -66,16 +63,17 @@ func (a *AgenciaDeQuiniela) CreateBet() (utils.Bet, error) {
 		AgencyID:  a.id,
 		FirstName: firstName,
 		LastName:  lastName,
-		Document:  uint32(document),
-		Birthdate: birthdate,
-		Number:    uint16(number),
+		Document:  uint32(documentToInt),
+		Birthdate: birthdateDate,
+		Number:    uint16(numberToInt),
 	}, nil
 }
 
 // StoreBet creates a bet using the CreateBet method and sends it to the server
 // using the given ClientProtocol.
-func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol) error {
-	bet, err := a.CreateBet()
+func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol,
+	firstName, lastName string, document string, birthdate string, number string) error {
+	bet, err := a.CreateBet(firstName, lastName, document, birthdate, number)
 	if err != nil {
 		return err
 	}

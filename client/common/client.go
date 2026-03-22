@@ -105,6 +105,17 @@ func NewClient() *Client {
 	return &Client{config, *agenciaDeQuiniela}
 }
 
+// extractBetFieldsFromArgs is a helper method that extracts the bet fields from
+// the environment variables and returns them as strings.
+func (c *Client) extractBetFieldsFromArgs() (string, string, string, string, string) {
+	firstName := os.Getenv("NOMBRE")
+	lastName := os.Getenv("APELLIDO")
+	document := os.Getenv("DOCUMENTO")
+	birthdate := os.Getenv("NACIMIENTO")
+	number := os.Getenv("NUMERO")
+	return firstName, lastName, document, birthdate, number
+}
+
 // Start is the main method of the client. It is responsible for starting the client and
 // handling the SIGTERM signal to gracefully shutdown the client. It creates a new
 // ClientProtocol to communicate with the server, sends the bet and receives the
@@ -115,6 +126,8 @@ func (c *Client) Start() {
 	clientProtocol, err := communication.NewClientProtocol(c.config.ServerAddress, c.config.ID)
 	if err != nil {
 		log.Criticalf("%s", err)
+		clientProtocol.Close()
+		return
 	}
 
 	select {
@@ -125,15 +138,21 @@ func (c *Client) Start() {
 	default:
 	}
 
-	err = c.agenciaDeQuiniela.StoreBet(clientProtocol)
+	firstName, lastName, document, birthdate, number := c.extractBetFieldsFromArgs()
+	err = c.agenciaDeQuiniela.StoreBet(clientProtocol, firstName, lastName,
+		document, birthdate, number)
 	if err != nil {
 		log.Criticalf("%s", err)
+		clientProtocol.Close()
+		return
 	}
 	log.Infof("action: registrar_apuesta | result: success")
 
 	betStoreResponse, err := c.agenciaDeQuiniela.RecvBetStoreResponse(clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
+		clientProtocol.Close()
+		return
 	}
 	log.Infof("action: apuesta_enviada | result: %s | dni: %v | number: %v",
 		func() string {
