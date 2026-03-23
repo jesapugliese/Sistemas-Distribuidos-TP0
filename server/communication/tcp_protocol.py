@@ -11,7 +11,7 @@ class TCPProtocol:
         """
         conn.sendall(data)
 
-    def recv_all(self, conn: socket.socket):
+    def recv_with_length(self, conn: socket.socket):
         """
         Receives all bytes from the TCP connection, first reading the length of the data 
         (2 bytes) and then reading the data itself.

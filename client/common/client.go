@@ -120,11 +120,10 @@ func NewClient() *Client {
 func (c *Client) sendBatch(clientProtocol communication.ClientProtocol, batch []utils.Bet) error {
 	clientProtocol.SendBatchBetsAmountMsg(len(batch))
 	log.Infof("action: enviar_cantidad_apuestas_en_batch | result: success | cantidad_apuestas_en_batch: %d", len(batch))
-	for _, bet := range batch {
-		err := c.agenciaDeQuiniela.StoreBet(clientProtocol, bet)
-		if err != nil {
-			return err
-		}
+
+	err := c.agenciaDeQuiniela.StoreBetsBatch(clientProtocol, batch)
+	if err != nil {
+		return err
 	}
 	log.Infof("action: enviar_batch | result: success")
 

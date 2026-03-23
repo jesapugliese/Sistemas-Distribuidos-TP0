@@ -84,6 +84,21 @@ func (as BetSerializer) SerializeStoreBetMsg(bet utils.Bet) ([]byte, error) {
 	return serialized, nil
 }
 
+// SerializeStoreBetsBatchMsg generates the serialized message to store a batch of bets.
+func (as BetSerializer) SerializeStoreBetsBatchMsg(batch []utils.Bet) ([]byte, error) {
+	var serialized []byte
+
+	for _, bet := range batch {
+		betBytes, err := as.SerializeStoreBetMsg(bet)
+		if err != nil {
+			return nil, err
+		}
+		serialized = append(serialized, betBytes...)
+	}
+
+	return serialized, nil
+}
+
 // DeserializeStoreBetsResponse deserializes the response received from the server after
 // sending a batch of bets.
 // Deserialization format:

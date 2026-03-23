@@ -11,14 +11,10 @@ class CentralDeLoteriaNacional:
         store them using the store_bets function, and send a response back 
         to the client indicating whether the storage was successful or not.
         """
-        bets = []
 
-        bets_processed = 0
-        while bets_processed < batch_bets_amount:
-            bet = server_protocol.recv_store_bet_msg()
-            bets.append(bet)
-            bets_processed += 1
         success = True
+
+        bets = server_protocol.recv_store_bets_batch_msg(batch_bets_amount)
 
         try:
             store_bets(bets)

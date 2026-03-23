@@ -20,8 +20,10 @@ func NewClientProtocol(serverAddress string, clientID string) (ClientProtocol, e
 		return ClientProtocol{}, err
 	}
 	return ClientProtocol{
-		betSerializer: NewBetSerializer(),
-		tcpProtocol:   NewTCPProtocol(clientSocket),
+		betSerializer:   NewBetSerializer(),
+		tcpProtocol:     NewTCPProtocol(clientSocket),
+		batch:           nil,
+		batchPacketSize: 0,
 	}, nil
 }
 
@@ -38,13 +40,13 @@ func createClientSocket(serverAddress string, clientID string) (net.Conn, error)
 	return conn, nil
 }
 
-// SendStoreBetMsg serializes the given bet and sends it to the server using TCPProtocol.
-func (cp ClientProtocol) SendStoreBetMsg(bet utils.Bet) error {
-	betSerialized, err := cp.betSerializer.SerializeStoreBetMsg(bet)
+// SendStoreBetsBatchMsg sends the given batch of bets to the server using the TCP protocol.
+func (cp ClientProtocol) SendStoreBetsBatchMsg(batch []utils.Bet) error {
+	storeBetsBatchMsgBytes, err := cp.betSerializer.SerializeStoreBetsBatchMsg(batch)
 	if err != nil {
 		return err
 	}
-	return cp.tcpProtocol.SendAll(betSerialized)
+	return cp.tcpProtocol.SendAll(storeBetsBatchMsgBytes)
 }
 
 // SendBatchBetsAmountMsg sends a message to the server indicating the size of the

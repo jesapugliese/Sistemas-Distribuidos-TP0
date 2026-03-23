@@ -18,15 +18,20 @@ class ServerProtocol:
                                                                 self._bet_serializer.get_batch_bets_amount_msg_length())
         return self._bet_serializer.deserialize_batch_bets_amount(batch_bets_amount_bytes)
 
-    def recv_store_bet_msg(self):
+    def recv_store_bets_batch_msg(self, batch_bets_amount):
         """
-        Receives a bet store message from the client socket and deserializes the bet into a 
-        Bet object.
-        It returns the bet and the size of the received message in bytes.
+        Receives a batch of bets store message from the client socket and deserializes the bets into a list of 
+        Bet objects.
+        It returns the list of bets.
         """
+        bets = []
 
-        store_bet_msg_bytes = self._tcp_protocol.recv_all(self._client_socket)
-        return self._bet_serializer.deserialize_bet(store_bet_msg_bytes)
+        for _ in range(batch_bets_amount):
+            bet_bytes = self._tcp_protocol.recv_with_length(self._client_socket)
+            bet = self._bet_serializer.deserialize_bet(bet_bytes)
+            bets.append(bet)
+
+        return bets
 
     def send_store_bets_response(self, success):
         """

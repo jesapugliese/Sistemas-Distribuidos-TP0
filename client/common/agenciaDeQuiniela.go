@@ -68,9 +68,9 @@ func (a *AgenciaDeQuiniela) CreateBet(firstName, lastName string,
 	}, nil
 }
 
-// StoreBet sends the store bet message to the server using the provided client protocol.
-func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol, bet utils.Bet) error {
-	return clientProtocol.SendStoreBetMsg(bet)
+// StoreBetsBatch sends the given batch of bets to the server using the provided client protocol.
+func (a *AgenciaDeQuiniela) StoreBetsBatch(clientProtocol communication.ClientProtocol, batch []utils.Bet) error {
+	return clientProtocol.SendStoreBetsBatchMsg(batch)
 }
 
 // GetStoreBetsResult receives the response from the server after sending a bet.
