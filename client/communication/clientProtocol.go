@@ -54,14 +54,14 @@ func (cp ClientProtocol) SendBatchSizeMsg(batchSize int) error {
 	return cp.tcpProtocol.SendAll(batchSizeMsgBytes)
 }
 
-// RecvStoreBetResponse receives the response from the server after sending the
-// store bet message.
-func (cp ClientProtocol) RecvStoreBetResponse() (utils.BetStoreResponse, error) {
-	betStoreResponseBytes, err := cp.tcpProtocol.RecvAll()
+// RecvStoreBetsResponse receives the response from the server after sending
+// a batch of bets. It returns whether the batch was successfully stored.
+func (cp ClientProtocol) RecvStoreBetsResponse() (bool, error) {
+	storeBetsResponseBytes, err := cp.tcpProtocol.RecvAll()
 	if err != nil {
-		return utils.BetStoreResponse{}, err
+		return false, err
 	}
-	return cp.betSerializer.DeserializeBetStoreResponse(betStoreResponseBytes)
+	return cp.betSerializer.DeserializeStoreBetsResponse(storeBetsResponseBytes)
 }
 
 // Close closes the TCP connection.

@@ -39,7 +39,6 @@ class Server:
         Server that accept a new connections and establishes a
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again.
-        This repeats until reaching 5 connections.
         """
 
         while self._running:
@@ -51,17 +50,21 @@ class Server:
 
     def _handle_client_connection(self):
         """
-        Receives message from a specific client socket and closes the socket
-
-        If a problem arises in the communication with the client, the
-        client socket will also be closed
+        Receives messages batches of bets from the client and processes them until 
+        a batch size message with a non-positive batch size is received, 
+        indicating the end of the communication. 
         """
 
         try:
-            logging.info('action: recibir_mensaje | result: in_progress')
-            document, number = self._central_de_loteria.recv_msg_store_bets(self._server_protocol)
-            logging.info('action: apuesta_almacenada | result: success | '
-                         f'dni: {document} | numero: {number}')
+            while True:
+                batch_size = self._server_protocol.recv_batch_size_msg()
+                if batch_size <= 0:
+                    break
+                bets_amount, err = self._central_de_loteria.store_bets(self._server_protocol, batch_size)
+                if err:
+                    logging.error(f"action: apuesta_recibida | result: fail | cantidad: {bets_amount}")
+                else:
+                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {bets_amount}")
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:

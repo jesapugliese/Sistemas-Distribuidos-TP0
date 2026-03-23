@@ -1,26 +1,21 @@
 from common.utils import Bet
 
-
 class BetSerializer:
     def __init__(self):
-        pass
+        self.batch_size_msg_length = 2
 
-    def serialize_store_success(self, bet_store_response) -> bytes:
+    def get_batch_size_msg_length(self):
+        return self.batch_size_msg_length
+
+    def serialize_store_bets_response(self, success) -> bytes:
         """
-        Serializes a success message for storing a bet, including the document and number of the bet.
+        Serializes a response message for storing a bet, indicating whether the operation was successful.
         The format of the serialized message is:
-        - msg_len: 2 bytes (integer)
-        - success: 1 byte (value 1 for success)
-        - document: 4 bytes (integer)
-        - number: 2 bytes (integer)
+        - success: 1 byte (integer, 1 = success)
         """
 
-        msg_len = 6
-        success_bytes = b'\x01' if bet_store_response.success else b'\x00'
-        document_bytes = bet_store_response.document.to_bytes(4, 'big')
-        number_bytes = bet_store_response.number.to_bytes(2, 'big')
-
-        return msg_len.to_bytes(2, 'big') + success_bytes + document_bytes + number_bytes
+        success_byte = b'\x01' if success else b'\x00'
+        return success_byte
 
     def deserialize_bet(self, bet_bytes) -> Bet:
         """
@@ -79,3 +74,12 @@ class BetSerializer:
             birthdate=f"{birthdate_year:04d}-{birthdate_month:02d}-{birthdate_day:02d}", 
             number=number
         )
+
+    def deserialize_batch_size(self, batch_size_bytes) -> int:
+        """
+        Deserializes the given bytes into an integer representing the batch size. 
+        The expected format of the bytes is:
+        - batch_size: 2 bytes (integer)
+        """
+
+        return int.from_bytes(batch_size_bytes, 'big')

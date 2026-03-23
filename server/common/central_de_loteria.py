@@ -1,19 +1,31 @@
-from common.utils import BetStoreResponse, store_bets
+from common.utils import store_bets
 
 
 class CentralDeLoteriaNacional:
     def __init__(self):
         pass
     
-    def recv_msg_store_bets(self, server_protocol):
+    def store_bets(self, server_protocol, batch_size):
         """
-        Receive a bet from a client and store it in the system. Then sends a success 
-        message back to the client with the document and number of the bet.
+        Receive a batch of bets from the client through the server protocol, 
+        store them using the store_bets function, and send a response back 
+        to the client indicating whether the storage was successful or not.
         """
-        
-        bet = server_protocol.recv_bet()
-        store_bets([bet])
-        bet_store_response = BetStoreResponse(success=True, document=bet.document, number=bet.number)
-        server_protocol.send_store_success(bet_store_response)
+        bets = []
 
-        return bet.document, bet.number
+        bytes_read = 0
+        bets_amount = 0
+        while bytes_read < batch_size:
+            bet, msg_size = server_protocol.recv_store_bet_msg()
+            bets.append(bet)
+            bytes_read += msg_size
+            bets_amount += 1
+
+        try:
+            store_bets(bets)
+        except Exception as e:
+            return bets_amount, e
+        
+        server_protocol.send_store_bets_response(False if e else True)
+
+        return bets_amount, None

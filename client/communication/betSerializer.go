@@ -10,11 +10,6 @@ import (
 type BetSerializer struct {
 }
 
-const (
-	OpcodeStoreBetMsg  = 1
-	OpcodeBatchSizeMsg = 2
-)
-
 func NewBetSerializer() BetSerializer {
 	return BetSerializer{}
 }
@@ -22,13 +17,12 @@ func NewBetSerializer() BetSerializer {
 // CalculateStoreBetMsgPacketSize calculates the size of the packet that would be generated
 // by serializing the given store bet message.
 func (as BetSerializer) CalculateStoreBetMsgPacketSize(bet utils.Bet) int {
-	return 2 + 1 + 1 + 1 + len(bet.FirstName) + 1 + len(bet.LastName) + 4 + 2 + 2
+	return 2 + 1 + 1 + len(bet.FirstName) + 1 + len(bet.LastName) + 4 + 2 + 2
 }
 
 // SerializeStoreBetMsg generates serializes the message to store a bet.
 // Serialization format:
 //   - MsgLen: 2 bytes (integer)
-//   - Opcode: 1 byte (integer)
 //   - AgencyID: 1 byte (integer)
 //   - FirstName: variable length string (preceded by its 1-byte length)
 //   - LastName: variable length string (preceded by its 1-byte length)
@@ -43,11 +37,9 @@ func (as BetSerializer) SerializeStoreBetMsg(bet utils.Bet) ([]byte, error) {
 
 	// Serialize MsgLen
 	var tmp2 [2]byte
-	binary.BigEndian.PutUint16(tmp2[:], uint16(as.CalculateStoreBetMsgPacketSize(bet)))
+	msgLen := as.CalculateStoreBetMsgPacketSize(bet) - 2
+	binary.BigEndian.PutUint16(tmp2[:], uint16(msgLen))
 	serialized = append(serialized, tmp2[:]...)
-
-	// Serialize Opcode
-	serialized = append(serialized, OpcodeStoreBetMsg)
 
 	// Serialize AgencyID
 	serialized = append(serialized, byte(bet.AgencyID))
@@ -86,52 +78,27 @@ func (as BetSerializer) SerializeStoreBetMsg(bet utils.Bet) ([]byte, error) {
 	return serialized, nil
 }
 
-// DeserializeBetStoreResponse deserializes the response received from the server after
-// sending a request for storage of a bet. It extracts the success status, document,
-// and number from the byte slice.
-// Data format:
-//   - MsgLen: 2 bytes (integer)
-//   - Success: 1 byte (value 1 for success)
-//   - Document: 4 bytes (integer)
-//   - Number: 2 bytes (integer)
-func (as BetSerializer) DeserializeBetStoreResponse(betStoreResponseBytes []byte) (utils.BetStoreResponse, error) {
-	if len(betStoreResponseBytes) != 8 {
-		return utils.BetStoreResponse{}, fmt.Errorf("Invalid data length for bet store response")
+// DeserializeStoreBetsResponse deserializes the response received from the server after
+// sending a batch of bets.
+// Deserialization format:
+//   - Success: 1 byte (integer, 1 = success)
+func (as BetSerializer) DeserializeStoreBetsResponse(storeBetsResponseBytes []byte) (bool, error) {
+	if len(storeBetsResponseBytes) != 1 {
+		return false, fmt.Errorf("Invalid data length for store bets response")
 	}
 
-	msgLen := binary.BigEndian.Uint16(betStoreResponseBytes[0:2])
-	if msgLen != 6 {
-		return utils.BetStoreResponse{}, fmt.Errorf("Invalid MsgLen in bet store response: expected 6, got %d", msgLen)
-	}
-	success := betStoreResponseBytes[2]
-	document := binary.BigEndian.Uint32(betStoreResponseBytes[3:7])
-	number := binary.BigEndian.Uint16(betStoreResponseBytes[7:9])
+	success := storeBetsResponseBytes[0]
 
-	return utils.BetStoreResponse{
-		Success:  success == 1,
-		Document: document,
-		Number:   number,
-	}, nil
+	return success == 1, nil
 }
 
-// SerializeBatchSize serialzes the message that indicates the batch size.
+// SerializeBatchSize serializes the message that indicates the batch size.
 // Serialization format:
-//   - MsgLen: 2 bytes (integer)
-//   - Opcode: 1 byte (integer)
 //   - BatchSize: 2 bytes (integer)
 func (as BetSerializer) SerializeBatchSize(batchSize int) []byte {
 	var serialized []byte
-
-	// Serialize MsgLen
 	var tmp2 [2]byte
-	msgLen := 1 + 2
-	binary.BigEndian.PutUint16(tmp2[:], uint16(msgLen))
-	serialized = append(serialized, tmp2[:]...)
 
-	// Serialize Opcode
-	serialized = append(serialized, OpcodeBatchSizeMsg)
-
-	// Serialize BatchSize
 	binary.BigEndian.PutUint16(tmp2[:], uint16(batchSize))
 	serialized = append(serialized, tmp2[:]...)
 

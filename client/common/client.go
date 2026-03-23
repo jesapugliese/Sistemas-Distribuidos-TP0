@@ -115,7 +115,7 @@ func NewClient() *Client {
 }
 
 // sendBatch sends the batch size to the server followed by the batch of bets.
-// After sending the batch, it waits for the response of each bet and logs the result.
+// After sending the batch, it waits for the response from the server and logs the result.
 func (c *Client) sendBatch(clientProtocol communication.ClientProtocol, batch []utils.Bet) error {
 	clientProtocol.SendBatchSizeMsg(len(batch))
 	for _, bet := range batch {
@@ -125,27 +125,26 @@ func (c *Client) sendBatch(clientProtocol communication.ClientProtocol, batch []
 		}
 		log.Infof("action: registrar_apuesta | result: success")
 	}
-	for range batch {
-		betStoreResponse, err := c.agenciaDeQuiniela.GetStoreBetResult(clientProtocol)
-		if err != nil {
-			return err
-		}
-		log.Infof("action: apuesta_enviada | result: %s | dni: %v | number: %v",
-			func() string {
-				if betStoreResponse.Success {
-					return "success"
-				}
-				return "fail"
-			}(),
-			betStoreResponse.Document,
-			betStoreResponse.Number,
-		)
+
+	success, err := c.agenciaDeQuiniela.GetStoreBetsResult(clientProtocol)
+	if err != nil {
+		return err
 	}
+	log.Infof("action: apuestas_registradas | result: %s",
+		func() string {
+			if success {
+				return "success"
+			}
+			return "fail"
+		}(),
+	)
 	return nil
 }
 
 // processBets reads the bets from the ./data/data.csv file and sends them
 // to the server in batches.
+// After sending all the batches, it sends a batch size of 0 to indicate
+// that there are no more bets to send.
 func (c *Client) processBets(clientProtocol communication.ClientProtocol) error {
 	dataFile, err := os.Open("./data/data.csv")
 	if err != nil {
@@ -156,9 +155,12 @@ func (c *Client) processBets(clientProtocol communication.ClientProtocol) error 
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
-			err := c.sendBatch(clientProtocol, clientProtocol.GetBatch())
-			if err != nil {
-				return err
+			batch := clientProtocol.GetBatch()
+			if batch != nil {
+				err := c.sendBatch(clientProtocol, batch)
+				if err != nil {
+					return err
+				}
 			}
 			break
 		}
@@ -186,7 +188,8 @@ func (c *Client) processBets(clientProtocol communication.ClientProtocol) error 
 	}
 
 	defer dataFile.Close()
-	return nil
+
+	return clientProtocol.SendBatchSizeMsg(0)
 }
 
 // Start is the main method of the client. It is responsible for starting the client and

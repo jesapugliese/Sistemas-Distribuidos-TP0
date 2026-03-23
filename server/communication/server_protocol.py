@@ -1,6 +1,5 @@
 from communication.bet_serializer import BetSerializer
 from communication.tcp_protocol import TCPProtocol
-from common.utils import Bet
 
 
 class ServerProtocol:
@@ -9,22 +8,33 @@ class ServerProtocol:
         self._bet_serializer = BetSerializer()
         self._tcp_protocol = TCPProtocol()
 
-    def recv_bet(self) -> Bet:
+    def recv_batch_size_msg(self) -> int:
         """
-        Receives a bet from the client socket and deserializes it into a 
+        Receives the batch size message from the client socket and returns the batch 
+        size as an integer.
+        """
+
+        batch_size_bytes = self._tcp_protocol.recv_exact(self._client_socket, 
+                                                         self._bet_serializer.get_batch_size_msg_length())
+        return self._bet_serializer.deserialize_batch_size(batch_size_bytes)
+
+    def recv_store_bet_msg(self):
+        """
+        Receives a bet store message from the client socket and deserializes the bet into a 
         Bet object.
+        It returns the bet and the size of the received message in bytes.
         """
 
-        bet_bytes = self._tcp_protocol.recv_all(self._client_socket)
-        return self._bet_serializer.deserialize_bet(bet_bytes)
+        store_bet_msg_bytes = self._tcp_protocol.recv_all(self._client_socket)
+        return self._bet_serializer.deserialize_bet(store_bet_msg_bytes), len(store_bet_msg_bytes)
 
-    def send_store_success(self, bet_store_response):
+    def send_store_bets_response(self, success):
         """
-        Sends a success message to the client socket indicating that the bet was
-        stored successfully. The message includes the document and number of the bet.
+        Sends a response message to the client socket indicating whether the storage
+        of the bets was successful or not.
         """
 
-        msg_store_success_bytes = self._bet_serializer.serialize_store_success(bet_store_response)
+        msg_store_success_bytes = self._bet_serializer.serialize_store_bets_response(success)
         self._tcp_protocol.send_all(self._client_socket, msg_store_success_bytes)
 
     def update_client_socket(self, client_socket):

@@ -16,14 +16,14 @@ class TCPProtocol:
         Receives all bytes from the TCP connection, first reading the length of the data 
         (2 bytes) and then reading the data itself.
         """
-        length_bytes = self._recv_exact(conn, 2)
+        length_bytes = self.recv_exact(conn, 2)
         length = int.from_bytes(length_bytes, byteorder='big', signed=False)
 
-        data = self._recv_exact(conn, length)
+        data = self.recv_exact(conn, length)
 
         return length_bytes + data
 
-    def _recv_exact(self, conn: socket.socket, n: int) -> bytes:
+    def recv_exact(self, conn: socket.socket, n: int) -> bytes:
         """
         Receives exactly n bytes from the TCP connection. If the connection is closed 
         before n bytes are received, raises a ConnectionError.

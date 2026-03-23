@@ -73,7 +73,7 @@ func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol
 	return clientProtocol.SendStoreBetMsg(bet)
 }
 
-// GetStoreBetResult receives the response from the server after sending a bet.
-func (a *AgenciaDeQuiniela) GetStoreBetResult(clientProtocol communication.ClientProtocol) (utils.BetStoreResponse, error) {
-	return clientProtocol.RecvStoreBetResponse()
+// GetStoreBetsResult receives the response from the server after sending a bet.
+func (a *AgenciaDeQuiniela) GetStoreBetsResult(clientProtocol communication.ClientProtocol) (bool, error) {
+	return clientProtocol.RecvStoreBetsResponse()
 }
