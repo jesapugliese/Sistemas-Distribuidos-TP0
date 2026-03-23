@@ -1,5 +1,16 @@
 # TP0: Docker + Comunicaciones + Concurrencia
 
+## Índice
+
+- [Parte 1: Introduccion a Docker](#parte-1-introduccion-a-docker)
+  - [Ejercicio N°1](#ejercicio-n1)
+  - [Ejercicio N°2](#ejercicio-n2)
+  - [Ejercicio N°3](#ejercicio-n3)
+  - [Ejercicio N°4](#ejercicio-n4)
+- [Parte 2: Repaso de Comunicaciones](#parte-2-repaso-de-comunicaciones)
+  - [Ejercicio N°5](#ejercicio-n5)
+  - [Ejercicio N°6](#ejercicio-n6)
+
 ## Parte 1: Introducción a Docker
 
 ### Ejercicio N°1:
@@ -69,6 +80,8 @@ Para que el servidor y el cliente terminen de forma graceful al recibir la signa
 #### Cliente:  
 - Se definió un canal de comunicación por el que se recibirá la signal SIGTERM. Al recibirla, se detiene el client loop. 
 
+## Parte 2: Repaso de Comunicaciones
+
 ### Ejercicio N°5:
 
 #### Ejecución:
@@ -91,12 +104,12 @@ Para que el servidor y el cliente terminen de forma graceful al recibir la signa
 #### Diagrama de Clases:
 
 <p align="center">
-  <img src="img/diagrama_de_clases_server.png" alt="diagrama_de_clases_server"><br>
+  <img src="img/ej5/diagrama_de_clases_server.png" alt="diagrama_de_clases_server"><br>
   <em>Diagrama de clases del server</em>
 </p>
 
 <p align="center">
-  <img src="img/diagrama_de_clases_client.png" alt="diagrama_de_clases_client"><br>
+  <img src="img/ej5/diagrama_de_clases_client.png" alt="diagrama_de_clases_client"><br>
   <em>Diagrama de clases del client</em>
 </p>
 
@@ -113,11 +126,64 @@ Para que el servidor y el cliente terminen de forma graceful al recibir la signa
 Para la comunicación entre el client y el server, se utilizo el protocolo de comunicación TCP con una serialización binaria hecha de la siguiente manera:  
 
 <p align="center">
-<img src="img/serializacion_binaria_msg_registrar_apuesta.png" alt="serializacion_binaria_msg_registrar_apuesta" width="700"><br>
+<img src="img/ej5/serializacion_binaria_msg_registrar_apuesta.png" alt="serializacion_binaria_msg_registrar_apuesta" width="700"><br>
 <em>Diagrama serialización del mensaje para registrar una apuesta (client → server)</em>
 </p>
 
 <p align="center">
-<img src="img/serializacion_binaria_msg_registro_apuesta_exitoso.png" alt="serializacion_binaria_msg_registro_apuesta_exitoso" width="350"><br>
+<img src="img/ej5/serializacion_binaria_msg_registro_apuesta_exitoso.png" alt="serializacion_binaria_msg_registro_apuesta_exitoso" width="350"><br>
 <em>Diagrama serialización del mensaje de respuesta a un registro de apuesta exitoso (server → client)</em>
 </p>
+
+### Ejercicio N°6:
+
+#### Ejecución:
+
+1. Levantar los containers y ejecutar el programa:  
+   ```bash  
+   make docker-compose-up
+   ```  
+
+2. Ver los logs:  
+   ```bash
+   make docker-compose-logs
+   ```  
+
+3. Detener y eliminar los containers, redes, imagenes y volumenes:  
+   ```bash
+   make docker-compose-down
+   ```
+
+#### Diagrama de Clases:
+
+<p align="center">
+  <img src="img/ej6/diagrama_de_clases_server.png" alt="diagrama_de_clases_server"><br>
+  <em>Diagrama de clases del server</em>
+</p>
+
+<p align="center">
+  <img src="img/ej6/diagrama_de_clases_client.png" alt="diagrama_de_clases_client"><br>
+  <em>Diagrama de clases del client</em>
+</p>
+
+#### Funcionamiento:
+
+- Por cada cliente, se lee su archivo de datos correspondiente línea por línea, calculando cuánto crecería el tamaño del batch en cada paso si se agregase la nueva apuesta.  
+- Si el paquete donde se enviaría el batch creciese más que 8kB, o si la cantidad de apuestas dentro del batch superase el valor pasado por el archivo de configuración, no se le agrega la nueva apuesta al batch y se envía lo que se acumuló hasta el momento. Luego se agrega la apuesta al batch vacío.  
+- Luego de enviar el batch, el client espera el resultado del server e imprime un log.  
+- Por su parte, el servidor procesa el batch generando un vector de apuestas que luego pasa a la función `store_bets()`.  
+- Después de almacenar las apuestas del batch, el server envía la respuesta al client e imprime el log.  
+- Al terminar de procesar todos los batches, el cliente envía al servidor un mensaje de "cantidad de apuestas en el batch" igual a 0, para que sepa que terminó y deje de procesar los batches, para así poder aceptar conexiones de nuevos clientes.  
+
+#### Protocolo de Comunicación:
+
+Para la comunicación entre el client y el server, se utilizo el protocolo de comunicación TCP con una serialización binaria hecha de la siguiente manera:  
+
+- Mensaje de la cantidad de apuestas en el batch que se enviará a continuación (client → server):  
+   2 bytes representando la cantidad de apuestas dentro del batch.
+
+- Mensaje con el batch (client → server):  
+   Apuestas serializadas según el Ejercicio 5 concantenadas en un único mensaje.
+
+- Mensaje de resultado de registro de las apuestas del batch (server → client):  
+   1 byte con valor igual a 1 si la operación resultó exitosa.
