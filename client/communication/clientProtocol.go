@@ -38,21 +38,25 @@ func createClientSocket(serverAddress string, clientID string) (net.Conn, error)
 	return conn, nil
 }
 
-// Send serializes the given bet and sends it to the server using TCPProtocol.
-func (cp ClientProtocol) SendBet(bet utils.Bet) error {
-	betSerialized, err := cp.betSerializer.SerializeBet(bet)
+// SendStoreBetMsg serializes the given bet and sends it to the server using TCPProtocol.
+func (cp ClientProtocol) SendStoreBetMsg(bet utils.Bet) error {
+	betSerialized, err := cp.betSerializer.SerializeStoreBetMsg(bet)
 	if err != nil {
 		return err
 	}
-	err = cp.tcpProtocol.SendAll(betSerialized)
-	if err != nil {
-		return err
-	}
-	return nil
+	return cp.tcpProtocol.SendAll(betSerialized)
 }
 
-// RecvBetStoreResponse receives the response from the server after sending a bet.
-func (cp ClientProtocol) RecvBetStoreResponse() (utils.BetStoreResponse, error) {
+// SendBatchSizeMsg sends a message to the server indicating the size of the
+// batch of bets that will be sent next.
+func (cp ClientProtocol) SendBatchSizeMsg(batchSize int) error {
+	batchSizeMsgBytes := cp.betSerializer.SerializeBatchSize(batchSize)
+	return cp.tcpProtocol.SendAll(batchSizeMsgBytes)
+}
+
+// RecvStoreBetResponse receives the response from the server after sending the
+// store bet message.
+func (cp ClientProtocol) RecvStoreBetResponse() (utils.BetStoreResponse, error) {
 	betStoreResponseBytes, err := cp.tcpProtocol.RecvAll()
 	if err != nil {
 		return utils.BetStoreResponse{}, err
@@ -69,7 +73,7 @@ func (cp ClientProtocol) Close() {
 // exceed either the maximum number of bets allowed in a batch or the
 // maximum packet size allowed for a batch.
 func (cp ClientProtocol) BatchReachMaxSize(currentBet utils.Bet, batchMaxAmount int, batchMaxPacketSize int) bool {
-	currentBetPacketSize := cp.betSerializer.CalculateBetPacketSize(currentBet)
+	currentBetPacketSize := cp.betSerializer.CalculateStoreBetMsgPacketSize(currentBet)
 	if cp.batchPacketSize+currentBetPacketSize > batchMaxPacketSize ||
 		len(cp.batch) > batchMaxAmount {
 		return true
@@ -90,5 +94,5 @@ func (cp *ClientProtocol) GetBatch() []utils.Bet {
 // the batch packet size accordingly.
 func (cp *ClientProtocol) AppendToBatch(bet utils.Bet) {
 	cp.batch = append(cp.batch, bet)
-	cp.batchPacketSize += cp.betSerializer.CalculateBetPacketSize(bet)
+	cp.batchPacketSize += cp.betSerializer.CalculateStoreBetMsgPacketSize(bet)
 }

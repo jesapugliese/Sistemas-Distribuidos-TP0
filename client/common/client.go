@@ -114,15 +114,14 @@ func NewClient() *Client {
 	return &Client{config, *agenciaDeQuiniela}
 }
 
-// sendStoreBetMsg sends a single bet to the server using the provided
-// client protocol. It first sends the bet to the server and then waits
-// for the response. Finally, it logs the result of the bet storage
-// operation.
-func (c *Client) sendStoreBetMsg(clientProtocol communication.ClientProtocol, bet utils.Bet) error {
+// storeBetWithAgencia sends a single bet to the server. It first sends the
+// bet to the server and then waits for the response. Finally, it logs the
+// result of the bet storage operation.
+func (c *Client) storeBetWithAgencia(clientProtocol communication.ClientProtocol, bet utils.Bet) error {
 	c.agenciaDeQuiniela.StoreBet(clientProtocol, bet)
 	log.Infof("action: registrar_apuesta | result: success")
 
-	betStoreResponse, err := c.agenciaDeQuiniela.RecvBetStoreResponse(clientProtocol)
+	betStoreResponse, err := c.agenciaDeQuiniela.GetStoreBetResult(clientProtocol)
 	if err != nil {
 		return err
 	}
@@ -139,10 +138,11 @@ func (c *Client) sendStoreBetMsg(clientProtocol communication.ClientProtocol, be
 	return nil
 }
 
-// sendStoreBetMsgs sends a batch of bets to the server.
-func (c *Client) sendStoreBetMsgs(clientProtocol communication.ClientProtocol, batch []utils.Bet) error {
+// sendBatch sends the batch size to the server followed by the batch of bets.
+func (c *Client) sendBatch(clientProtocol communication.ClientProtocol, batch []utils.Bet) error {
+	clientProtocol.SendBatchSizeMsg(len(batch))
 	for _, bet := range batch {
-		err := c.sendStoreBetMsg(clientProtocol, bet)
+		err := c.storeBetWithAgencia(clientProtocol, bet)
 		if err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ func (c *Client) processBets(clientProtocol communication.ClientProtocol) error 
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
-			err := c.sendStoreBetMsgs(clientProtocol, clientProtocol.GetBatch())
+			err := c.sendBatch(clientProtocol, clientProtocol.GetBatch())
 			if err != nil {
 				return err
 			}
@@ -182,7 +182,7 @@ func (c *Client) processBets(clientProtocol communication.ClientProtocol) error 
 		}
 
 		if clientProtocol.BatchReachMaxSize(bet, c.config.BatchMaxAmount, c.config.BatchMaxPacketSize) {
-			err := c.sendStoreBetMsgs(clientProtocol, clientProtocol.GetBatch())
+			err := c.sendBatch(clientProtocol, clientProtocol.GetBatch())
 			if err != nil {
 				return err
 			}

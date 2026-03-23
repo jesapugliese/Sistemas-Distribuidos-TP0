@@ -68,12 +68,12 @@ func (a *AgenciaDeQuiniela) CreateBet(firstName, lastName string,
 	}, nil
 }
 
-// StoreBet sends the given bet to the server using the provided client protocol.
+// StoreBet sends the store bet message to the server using the provided client protocol.
 func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol, bet utils.Bet) {
-	clientProtocol.SendBet(bet)
+	clientProtocol.SendStoreBetMsg(bet)
 }
 
-// RecvBetStoreResponse receives the response from the server after sending a bet.
-func (a *AgenciaDeQuiniela) RecvBetStoreResponse(clientProtocol communication.ClientProtocol) (utils.BetStoreResponse, error) {
-	return clientProtocol.RecvBetStoreResponse()
+// GetStoreBetResult receives the response from the server after sending a bet.
+func (a *AgenciaDeQuiniela) GetStoreBetResult(clientProtocol communication.ClientProtocol) (utils.BetStoreResponse, error) {
+	return clientProtocol.RecvStoreBetResponse()
 }
