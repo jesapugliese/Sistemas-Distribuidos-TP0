@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -145,18 +146,33 @@ func (c *Client) sendBatch(clientProtocol communication.ClientProtocol, batch []
 // to the server in batches.
 // After sending all the batches, it sends a batch size of 0 to indicate
 // that there are no more bets to send.
-func (c *Client) processBets(clientProtocol communication.ClientProtocol) error {
+func (c *Client) processBets(ctx context.Context, clientProtocol communication.ClientProtocol) error {
 	dataFile, err := os.Open("./data/data.csv")
 	if err != nil {
 		return err
 	}
+	defer dataFile.Close()
 
 	reader := csv.NewReader(dataFile)
 	for {
+		select {
+		case <-ctx.Done():
+			log.Infof("action: sigterm_received | result: success | client_id: %v", c.config.ID)
+			batch := clientProtocol.GetBatch()
+			if len(batch) > 0 {
+				err := c.sendBatch(clientProtocol, batch)
+				if err != nil {
+					return err
+				}
+			}
+			return clientProtocol.SendBatchSizeMsg(0)
+		default:
+		}
+
 		line, err := reader.Read()
 		if err == io.EOF {
 			batch := clientProtocol.GetBatch()
-			if batch != nil {
+			if len(batch) > 0 {
 				err := c.sendBatch(clientProtocol, batch)
 				if err != nil {
 					return err
@@ -187,8 +203,6 @@ func (c *Client) processBets(clientProtocol communication.ClientProtocol) error 
 		clientProtocol.AppendToBatch(bet)
 	}
 
-	defer dataFile.Close()
-
 	return clientProtocol.SendBatchSizeMsg(0)
 }
 
@@ -197,27 +211,18 @@ func (c *Client) processBets(clientProtocol communication.ClientProtocol) error 
 // ClientProtocol to communicate with the server, sends the bet and receives the
 // response from the server. Finally, it logs the result of the bet storage operation.
 func (c *Client) Start() {
-	signalChannel := make(chan os.Signal, 1)
-	signal.Notify(signalChannel, syscall.SIGTERM)
 	clientProtocol, err := communication.NewClientProtocol(c.config.ServerAddress, c.config.ID)
 	if err != nil {
 		log.Criticalf("%s", err)
-		clientProtocol.Close()
 		return
 	}
+	defer clientProtocol.Close()
 
-	select {
-	case <-signalChannel:
-		log.Infof("action: sigterm_received | result: success | client_id: %v", c.config.ID)
-		clientProtocol.Close()
-		return
-	default:
-	}
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM)
+	defer stop()
 
-	err = c.processBets(clientProtocol)
+	err = c.processBets(ctx, clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
-
-	clientProtocol.Close()
 }
