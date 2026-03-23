@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -51,7 +50,7 @@ func (a *AgenciaDeQuiniela) CreateBet(firstName, lastName string,
 		Day:   uint8(birthdateParsed.Day()),
 	}
 
-	numberToInt, err := strconv.ParseUint(os.Getenv("NUMERO"), 10, 16)
+	numberToInt, err := strconv.ParseUint(number, 10, 16)
 	if err != nil {
 		return utils.Bet{}, fmt.Errorf("Error at parsing bet number: %v", err)
 	}

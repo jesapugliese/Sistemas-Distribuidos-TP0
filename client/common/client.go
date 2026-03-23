@@ -1,7 +1,9 @@
 package common
 
 import (
+	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strconv"
@@ -105,15 +107,64 @@ func NewClient() *Client {
 	return &Client{config, *agenciaDeQuiniela}
 }
 
-// extractBetFieldsFromArgs is a helper method that extracts the bet fields from
-// the environment variables and returns them as strings.
-func (c *Client) extractBetFieldsFromArgs() (string, string, string, string, string) {
-	firstName := os.Getenv("NOMBRE")
-	lastName := os.Getenv("APELLIDO")
-	document := os.Getenv("DOCUMENTO")
-	birthdate := os.Getenv("NACIMIENTO")
-	number := os.Getenv("NUMERO")
-	return firstName, lastName, document, birthdate, number
+// sendStoreBetMsg extracts the bet information from the given line and
+// sends it to agenciaDeQuiniela to be stored. Then it receives the response
+// from the server and logs the result of the bet storage operation.
+func (c *Client) sendStoreBetMsg(clientProtocol communication.ClientProtocol, line []string) error {
+	if len(line) != 5 {
+		return fmt.Errorf("Invalid number of fields in line: %v", line)
+	}
+	firstName, lastName, document, birthdate, number := line[0], line[1], line[2], line[3], line[4]
+	log.Infof("action: crear_apuesta | result: success | dni: %v | number: %v", document, number)
+	err := c.agenciaDeQuiniela.StoreBet(clientProtocol, firstName, lastName, document, birthdate, number)
+	if err != nil {
+		return err
+	}
+	log.Infof("action: registrar_apuesta | result: success")
+
+	betStoreResponse, err := c.agenciaDeQuiniela.RecvBetStoreResponse(clientProtocol)
+	if err != nil {
+		return err
+	}
+	log.Infof("action: apuesta_enviada | result: %s | dni: %v | number: %v",
+		func() string {
+			if betStoreResponse.Success {
+				return "success"
+			}
+			return "fail"
+		}(),
+		betStoreResponse.Document,
+		betStoreResponse.Number,
+	)
+	return nil
+}
+
+// sendStoreBetMsgs reads the bets from the ./data/data.csv file and sends them to the
+// server using the given ClientProtocol.
+func (c *Client) sendStoreBetMsgs(clientProtocol communication.ClientProtocol) error {
+	dataFile, err := os.Open("./data/data.csv")
+	if err != nil {
+		return err
+	}
+
+	reader := csv.NewReader(dataFile)
+	for {
+		line, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		err = c.sendStoreBetMsg(clientProtocol, line)
+		if err != nil {
+			return err
+		}
+	}
+
+	defer dataFile.Close()
+	return nil
 }
 
 // Start is the main method of the client. It is responsible for starting the client and
@@ -138,32 +189,10 @@ func (c *Client) Start() {
 	default:
 	}
 
-	firstName, lastName, document, birthdate, number := c.extractBetFieldsFromArgs()
-	err = c.agenciaDeQuiniela.StoreBet(clientProtocol, firstName, lastName,
-		document, birthdate, number)
+	err = c.sendStoreBetMsgs(clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
-		clientProtocol.Close()
-		return
 	}
-	log.Infof("action: registrar_apuesta | result: success")
-
-	betStoreResponse, err := c.agenciaDeQuiniela.RecvBetStoreResponse(clientProtocol)
-	if err != nil {
-		log.Criticalf("%s", err)
-		clientProtocol.Close()
-		return
-	}
-	log.Infof("action: apuesta_enviada | result: %s | dni: %v | number: %v",
-		func() string {
-			if betStoreResponse.Success {
-				return "success"
-			}
-			return "fail"
-		}(),
-		betStoreResponse.Document,
-		betStoreResponse.Number,
-	)
 
 	clientProtocol.Close()
 }
