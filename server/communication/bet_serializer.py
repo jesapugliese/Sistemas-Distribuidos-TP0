@@ -9,20 +9,23 @@ class BetSerializer:
         """
         Serializes a success message for storing a bet, including the document and number of the bet.
         The format of the serialized message is:
+        - msg_len: 2 bytes (integer)
         - success: 1 byte (value 1 for success)
         - document: 4 bytes (integer)
         - number: 2 bytes (integer)
         """
 
+        msg_len = 6
         success_bytes = b'\x01' if bet_store_response.success else b'\x00'
         document_bytes = bet_store_response.document.to_bytes(4, 'big')
         number_bytes = bet_store_response.number.to_bytes(2, 'big')
 
-        return success_bytes + document_bytes + number_bytes
+        return msg_len.to_bytes(2, 'big') + success_bytes + document_bytes + number_bytes
 
     def deserialize_bet(self, bet_bytes) -> Bet:
         """
         Deserializes the given bytes into a Bet object. The expected format of the bytes is:
+        - msg_len: 2 bytes (integer)
         - agency_id: 1 byte (integer)
         - first_name: variable length string (preceded by its 1-byte length)
         - last_name: variable length string (preceded by its 1-byte length)
@@ -34,7 +37,7 @@ class BetSerializer:
         - number: 2 bytes (integer)
         """
 
-        offset = 0
+        offset = 2 # Ignore msg_len
 
         # Deserialize agency ID
         agency_id = bet_bytes[offset]

@@ -17,13 +17,13 @@ func NewBetSerializer() BetSerializer {
 // CalculateBetPacketSize calculates the size of the packet that would be generated
 // by serializing the given bet.
 func (as BetSerializer) CalculateBetPacketSize(bet utils.Bet) int {
-	return 1 + 1 + 1 + len(bet.FirstName) + 1 + len(bet.LastName) + 4 + 2 + 2
+	return 2 + 1 + 1 + len(bet.FirstName) + 1 + len(bet.LastName) + 4 + 2 + 2
 }
 
 // Serialize converts a Bet struct into a byte slice that can be sent
 // over the network.
 // Serialization format:
-//   - MsgLen: 1 byte (integer)
+//   - MsgLen: 2 bytes (integer)
 //   - AgencyID: 1 byte (integer)
 //   - FirstName: variable length string (preceded by its 1-byte length)
 //   - LastName: variable length string (preceded by its 1-byte length)
@@ -37,11 +37,9 @@ func (as BetSerializer) SerializeBet(bet utils.Bet) ([]byte, error) {
 	var serialized []byte
 
 	// Serialize MsgLen
-	msgLen := as.CalculateBetPacketSize(bet)
-	if msgLen > 255 {
-		return nil, fmt.Errorf("Bet data too large to serialize")
-	}
-	serialized = append(serialized, byte(msgLen))
+	var tmp2 [2]byte
+	binary.BigEndian.PutUint16(tmp2[:], uint16(as.CalculateBetPacketSize(bet)))
+	serialized = append(serialized, tmp2[:]...)
 
 	// Serialize AgencyID
 	serialized = append(serialized, byte(bet.AgencyID))
@@ -74,7 +72,6 @@ func (as BetSerializer) SerializeBet(bet utils.Bet) ([]byte, error) {
 	serialized = append(serialized, tmp4[:]...)
 
 	// Serialize Number
-	var tmp2 [2]byte
 	binary.BigEndian.PutUint16(tmp2[:], uint16(bet.Number))
 	serialized = append(serialized, tmp2[:]...)
 
@@ -85,22 +82,22 @@ func (as BetSerializer) SerializeBet(bet utils.Bet) ([]byte, error) {
 // sending a request for storage of a bet. It extracts the success status, document,
 // and number from the byte slice.
 // Data format:
-//   - MsgLen: 1 byte (integer)
+//   - MsgLen: 2 bytes (integer)
 //   - Success: 1 byte (value 1 for success)
 //   - Document: 4 bytes (integer)
 //   - Number: 2 bytes (integer)
 func (as BetSerializer) DeserializeBetStoreResponse(betStoreResponseBytes []byte) (utils.BetStoreResponse, error) {
-	if len(betStoreResponseBytes) != 7 {
+	if len(betStoreResponseBytes) != 8 {
 		return utils.BetStoreResponse{}, fmt.Errorf("Invalid data length for bet store response")
 	}
 
-	msgLen := betStoreResponseBytes[0]
+	msgLen := binary.BigEndian.Uint16(betStoreResponseBytes[0:2])
 	if msgLen != 6 {
 		return utils.BetStoreResponse{}, fmt.Errorf("Invalid MsgLen in bet store response: expected 6, got %d", msgLen)
 	}
-	success := betStoreResponseBytes[1]
-	document := binary.BigEndian.Uint32(betStoreResponseBytes[2:6])
-	number := binary.BigEndian.Uint16(betStoreResponseBytes[6:8])
+	success := betStoreResponseBytes[2]
+	document := binary.BigEndian.Uint32(betStoreResponseBytes[3:7])
+	number := binary.BigEndian.Uint16(betStoreResponseBytes[7:9])
 
 	return utils.BetStoreResponse{
 		Success:  success == 1,
