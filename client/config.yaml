@@ -5,4 +5,3 @@ log:
   level: "INFO"
 batch:
   maxAmount: 86
-  maxPacketSize: 8192

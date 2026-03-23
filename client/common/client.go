@@ -75,12 +75,11 @@ func InitLogger(logLevel string) error {
 // PrintConfig Print all the configuration parameters of the program.
 // For debugging purposes only
 func PrintConfig(v *viper.Viper) {
-	log.Infof("action: config | result: success | client_id: %s | server_address: %s | log_level: %s | batch_max_amount: %d | batch_max_packet_size: %d",
+	log.Infof("action: config | result: success | client_id: %s | server_address: %s | log_level: %s | batch_max_amount: %d",
 		v.GetString("id"),
 		v.GetString("server.address"),
 		v.GetString("log.level"),
 		v.GetInt("batch.maxAmount"),
-		v.GetInt("batch.maxPacketSize"),
 	)
 }
 
@@ -102,7 +101,7 @@ func NewClient() *Client {
 		ServerAddress:      v.GetString("server.address"),
 		ID:                 v.GetString("id"),
 		BatchMaxAmount:     v.GetInt("batch.maxAmount"),
-		BatchMaxPacketSize: v.GetInt("batch.maxPacketSize"),
+		BatchMaxPacketSize: 8192, // Max packet size: 8kB
 	}
 	id, err := strconv.ParseUint(config.ID, 10, 8)
 	if err != nil {
