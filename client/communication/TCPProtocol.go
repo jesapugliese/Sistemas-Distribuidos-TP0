@@ -31,13 +31,13 @@ func (tcpProt TCPProtocol) SendAll(data []byte) error {
 // then reads the message data based on that length.
 // It returns the complete message, including the length bytes.
 func (tcpProt TCPProtocol) RecvAll() ([]byte, error) {
-	lengthBytes, err := tcpProt.recvExact(2)
+	lengthBytes, err := tcpProt.RecvExact(2)
 	if err != nil {
 		return nil, err
 	}
 	length := binary.BigEndian.Uint16(lengthBytes)
 
-	data, err := tcpProt.recvExact(int(length))
+	data, err := tcpProt.RecvExact(int(length))
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +45,8 @@ func (tcpProt TCPProtocol) RecvAll() ([]byte, error) {
 	return append(lengthBytes, data...), nil
 }
 
-// recvExact reads exactly n bytes from the TCP connection.
-func (tcpProt TCPProtocol) recvExact(n int) ([]byte, error) {
+// RecvExact reads exactly n bytes from the TCP connection.
+func (tcpProt TCPProtocol) RecvExact(n int) ([]byte, error) {
 	data := make([]byte, n)
 	totalRead := 0
 	for totalRead < n {

@@ -57,7 +57,7 @@ func (cp ClientProtocol) SendBatchBetsAmountMsg(batchBetsAmount int) error {
 // RecvStoreBetsResponse receives the response from the server after sending
 // a batch of bets. It returns whether the batch was successfully stored.
 func (cp ClientProtocol) RecvStoreBetsResponse() (bool, error) {
-	storeBetsResponseBytes, err := cp.tcpProtocol.RecvAll()
+	storeBetsResponseBytes, err := cp.tcpProtocol.RecvExact(cp.betSerializer.CalculateStoreBetsResponsePacketSize())
 	if err != nil {
 		return false, err
 	}

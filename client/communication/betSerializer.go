@@ -20,6 +20,12 @@ func (as BetSerializer) CalculateStoreBetMsgPacketSize(bet utils.Bet) int {
 	return 2 + 1 + 1 + len(bet.FirstName) + 1 + len(bet.LastName) + 4 + 2 + 1 + 1 + 2
 }
 
+// CalculateStoreBetsResponsePacketSize calculates the size of the packet that contains
+// the response from the server after sending a batch of bets.
+func (as BetSerializer) CalculateStoreBetsResponsePacketSize() int {
+	return 1
+}
+
 // SerializeStoreBetMsg generates serializes the message to store a bet.
 // Serialization format:
 //   - MsgLen: 2 bytes (integer)
