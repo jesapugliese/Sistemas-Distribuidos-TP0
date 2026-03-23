@@ -8,15 +8,15 @@ class ServerProtocol:
         self._bet_serializer = BetSerializer()
         self._tcp_protocol = TCPProtocol()
 
-    def recv_batch_size_msg(self) -> int:
+    def recv_batch_bets_amount_msg(self) -> int:
         """
-        Receives the batch size message from the client socket and returns the batch 
-        size as an integer.
+        Receives the batch bets amount message from the client socket and returns the batch 
+        bets amount as an integer.
         """
 
-        batch_size_bytes = self._tcp_protocol.recv_exact(self._client_socket, 
-                                                         self._bet_serializer.get_batch_size_msg_length())
-        return self._bet_serializer.deserialize_batch_size(batch_size_bytes)
+        batch_bets_amount_bytes = self._tcp_protocol.recv_exact(self._client_socket, 
+                                                                self._bet_serializer.get_batch_bets_amount_msg_length())
+        return self._bet_serializer.deserialize_batch_bets_amount(batch_bets_amount_bytes)
 
     def recv_store_bet_msg(self):
         """
@@ -26,7 +26,7 @@ class ServerProtocol:
         """
 
         store_bet_msg_bytes = self._tcp_protocol.recv_all(self._client_socket)
-        return self._bet_serializer.deserialize_bet(store_bet_msg_bytes), len(store_bet_msg_bytes)
+        return self._bet_serializer.deserialize_bet(store_bet_msg_bytes)
 
     def send_store_bets_response(self, success):
         """
@@ -34,8 +34,8 @@ class ServerProtocol:
         of the bets was successful or not.
         """
 
-        msg_store_success_bytes = self._bet_serializer.serialize_store_bets_response(success)
-        self._tcp_protocol.send_all(self._client_socket, msg_store_success_bytes)
+        msg_store_response_bytes = self._bet_serializer.serialize_store_bets_response(success)
+        self._tcp_protocol.send_all(self._client_socket, msg_store_response_bytes)
 
     def update_client_socket(self, client_socket):
         self._client_socket = client_socket

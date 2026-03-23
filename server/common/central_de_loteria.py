@@ -5,7 +5,7 @@ class CentralDeLoteriaNacional:
     def __init__(self):
         pass
     
-    def store_bets(self, server_protocol, batch_size):
+    def store_bets(self, server_protocol, batch_bets_amount):
         """
         Receive a batch of bets from the client through the server protocol, 
         store them using the store_bets function, and send a response back 
@@ -13,19 +13,18 @@ class CentralDeLoteriaNacional:
         """
         bets = []
 
-        bytes_read = 0
-        bets_amount = 0
-        while bytes_read < batch_size:
-            bet, msg_size = server_protocol.recv_store_bet_msg()
+        bets_processed = 0
+        while bets_processed < batch_bets_amount:
+            bet = server_protocol.recv_store_bet_msg()
             bets.append(bet)
-            bytes_read += msg_size
-            bets_amount += 1
+            bets_processed += 1
+        success = True
 
         try:
             store_bets(bets)
-        except Exception as e:
-            return bets_amount, e
+        except Exception:
+            success = False
         
-        server_protocol.send_store_bets_response(False if e else True)
+        server_protocol.send_store_bets_response(success)
 
-        return bets_amount, None
+        return None

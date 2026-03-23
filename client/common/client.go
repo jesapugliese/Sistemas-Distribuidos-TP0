@@ -118,14 +118,15 @@ func NewClient() *Client {
 // sendBatch sends the batch size to the server followed by the batch of bets.
 // After sending the batch, it waits for the response from the server and logs the result.
 func (c *Client) sendBatch(clientProtocol communication.ClientProtocol, batch []utils.Bet) error {
-	clientProtocol.SendBatchSizeMsg(len(batch))
+	clientProtocol.SendBatchBetsAmountMsg(len(batch))
+	log.Infof("action: enviar_cantidad_apuestas_en_batch | result: success | cantidad_apuestas_en_batch: %d", len(batch))
 	for _, bet := range batch {
 		err := c.agenciaDeQuiniela.StoreBet(clientProtocol, bet)
 		if err != nil {
 			return err
 		}
-		log.Infof("action: registrar_apuesta | result: success")
 	}
+	log.Infof("action: enviar_batch | result: success")
 
 	success, err := c.agenciaDeQuiniela.GetStoreBetsResult(clientProtocol)
 	if err != nil {
@@ -158,14 +159,7 @@ func (c *Client) processBets(ctx context.Context, clientProtocol communication.C
 		select {
 		case <-ctx.Done():
 			log.Infof("action: sigterm_received | result: success | client_id: %v", c.config.ID)
-			batch := clientProtocol.GetBatch()
-			if len(batch) > 0 {
-				err := c.sendBatch(clientProtocol, batch)
-				if err != nil {
-					return err
-				}
-			}
-			return clientProtocol.SendBatchSizeMsg(0)
+			return nil
 		default:
 		}
 
@@ -203,7 +197,7 @@ func (c *Client) processBets(ctx context.Context, clientProtocol communication.C
 		clientProtocol.AppendToBatch(bet)
 	}
 
-	return clientProtocol.SendBatchSizeMsg(0)
+	return clientProtocol.SendBatchBetsAmountMsg(0)
 }
 
 // Start is the main method of the client. It is responsible for starting the client and

@@ -47,11 +47,11 @@ func (cp ClientProtocol) SendStoreBetMsg(bet utils.Bet) error {
 	return cp.tcpProtocol.SendAll(betSerialized)
 }
 
-// SendBatchSizeMsg sends a message to the server indicating the size of the
+// SendBatchBetsAmountMsg sends a message to the server indicating the size of the
 // batch of bets that will be sent next.
-func (cp ClientProtocol) SendBatchSizeMsg(batchSize int) error {
-	batchSizeMsgBytes := cp.betSerializer.SerializeBatchSize(batchSize)
-	return cp.tcpProtocol.SendAll(batchSizeMsgBytes)
+func (cp ClientProtocol) SendBatchBetsAmountMsg(batchBetsAmount int) error {
+	batchBetsAmountMsgBytes := cp.betSerializer.SerializeBatchBetsAmount(batchBetsAmount)
+	return cp.tcpProtocol.SendAll(batchBetsAmountMsgBytes)
 }
 
 // RecvStoreBetsResponse receives the response from the server after sending
@@ -75,7 +75,7 @@ func (cp ClientProtocol) Close() {
 func (cp ClientProtocol) BatchReachMaxSize(currentBet utils.Bet, batchMaxAmount int, batchMaxPacketSize int) bool {
 	currentBetPacketSize := cp.betSerializer.CalculateStoreBetMsgPacketSize(currentBet)
 	if cp.batchPacketSize+currentBetPacketSize > batchMaxPacketSize ||
-		len(cp.batch) > batchMaxAmount {
+		len(cp.batch)+1 > batchMaxAmount {
 		return true
 	}
 	return false

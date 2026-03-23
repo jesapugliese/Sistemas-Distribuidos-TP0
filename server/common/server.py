@@ -57,14 +57,15 @@ class Server:
 
         try:
             while True:
-                batch_size = self._server_protocol.recv_batch_size_msg()
-                if batch_size <= 0:
+                batch_bets_amount = self._server_protocol.recv_batch_bets_amount_msg()
+                logging.info(f"action: recibir_cantidad_apuestas_en_batch | result: success | cantidad_apuestas_en_batch: {batch_bets_amount}")
+                if batch_bets_amount <= 0:
                     break
-                bets_amount, err = self._central_de_loteria.store_bets(self._server_protocol, batch_size)
+                err = self._central_de_loteria.store_bets(self._server_protocol, batch_bets_amount)
                 if err:
-                    logging.error(f"action: apuesta_recibida | result: fail | cantidad: {bets_amount}")
+                    logging.error(f"action: apuesta_recibida | result: fail | cantidad: {batch_bets_amount}")
                 else:
-                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {bets_amount}")
+                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {batch_bets_amount}")
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:

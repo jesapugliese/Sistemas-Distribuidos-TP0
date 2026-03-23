@@ -17,7 +17,7 @@ func NewBetSerializer() BetSerializer {
 // CalculateStoreBetMsgPacketSize calculates the size of the packet that would be generated
 // by serializing the given store bet message.
 func (as BetSerializer) CalculateStoreBetMsgPacketSize(bet utils.Bet) int {
-	return 2 + 1 + 1 + len(bet.FirstName) + 1 + len(bet.LastName) + 4 + 2 + 2
+	return 2 + 1 + 1 + len(bet.FirstName) + 1 + len(bet.LastName) + 4 + 2 + 1 + 1 + 2
 }
 
 // SerializeStoreBetMsg generates serializes the message to store a bet.
@@ -92,14 +92,14 @@ func (as BetSerializer) DeserializeStoreBetsResponse(storeBetsResponseBytes []by
 	return success == 1, nil
 }
 
-// SerializeBatchSize serializes the message that indicates the batch size.
+// SerializeBatchBetsAmount serializes the message that indicates the batch bets amount.
 // Serialization format:
-//   - BatchSize: 2 bytes (integer)
-func (as BetSerializer) SerializeBatchSize(batchSize int) []byte {
+//   - BatchBetsAmount: 2 bytes (integer)
+func (as BetSerializer) SerializeBatchBetsAmount(batchBetsAmount int) []byte {
 	var serialized []byte
 	var tmp2 [2]byte
 
-	binary.BigEndian.PutUint16(tmp2[:], uint16(batchSize))
+	binary.BigEndian.PutUint16(tmp2[:], uint16(batchBetsAmount))
 	serialized = append(serialized, tmp2[:]...)
 
 	return serialized
