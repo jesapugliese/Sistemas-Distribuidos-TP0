@@ -8,8 +8,10 @@ import (
 )
 
 type ClientProtocol struct {
-	betSerializer BetSerializer
-	tcpProtocol   TCPProtocol
+	betSerializer   BetSerializer
+	tcpProtocol     TCPProtocol
+	batch           []utils.Bet
+	batchPacketSize int
 }
 
 func NewClientProtocol(serverAddress string, clientID string) (ClientProtocol, error) {
@@ -61,4 +63,32 @@ func (cp ClientProtocol) RecvBetStoreResponse() (utils.BetStoreResponse, error) 
 // Close closes the TCP connection.
 func (cp ClientProtocol) Close() {
 	cp.tcpProtocol.Close()
+}
+
+// BatchReachMaxSize checks if adding the current bet to the batch would
+// exceed either the maximum number of bets allowed in a batch or the
+// maximum packet size allowed for a batch.
+func (cp ClientProtocol) BatchReachMaxSize(currentBet utils.Bet, batchMaxAmount int, batchMaxPacketSize int) bool {
+	currentBetPacketSize := cp.betSerializer.CalculateBetPacketSize(currentBet)
+	if cp.batchPacketSize+currentBetPacketSize > batchMaxPacketSize ||
+		len(cp.batch) > batchMaxAmount {
+		return true
+	}
+	return false
+}
+
+// GetBatch returns the current batch of bets and resets the batch and
+// its packet size.
+func (cp *ClientProtocol) GetBatch() []utils.Bet {
+	batch := cp.batch
+	cp.batch = nil
+	cp.batchPacketSize = 0
+	return batch
+}
+
+// AppendToBatch adds the given bet to the current batch and updates
+// the batch packet size accordingly.
+func (cp *ClientProtocol) AppendToBatch(bet utils.Bet) {
+	cp.batch = append(cp.batch, bet)
+	cp.batchPacketSize += cp.betSerializer.CalculateBetPacketSize(bet)
 }

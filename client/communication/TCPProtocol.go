@@ -13,22 +13,8 @@ func NewTCPProtocol(conn net.Conn) TCPProtocol {
 	return TCPProtocol{conn: conn}
 }
 
-// SendAll sends the given data over the TCP connection. It first
-// sends the length of the data (2 bytes) followed by the actual data.
+// SendAll sends the given data over the TCP connection.
 func (tcpProt TCPProtocol) SendAll(data []byte) error {
-	var lengthBytes [2]byte
-	length := uint16(len(data))
-	binary.BigEndian.PutUint16(lengthBytes[:], length)
-	err := tcpProt.sendExact(lengthBytes[:])
-	if err != nil {
-		return err
-	}
-
-	return tcpProt.sendExact(data)
-}
-
-// sendExact sends exactly the given data over the TCP connection.
-func (tcpProt TCPProtocol) sendExact(data []byte) error {
 	totalSend := 0
 	for totalSend < len(data) {
 		n, err := tcpProt.conn.Write(data[totalSend:])
@@ -40,9 +26,10 @@ func (tcpProt TCPProtocol) sendExact(data []byte) error {
 	return nil
 }
 
-// RecvAll receives data from the TCP connection. It first reads the length
-// of the incoming data (2 bytes) and then reads the actual data based on
-// that length. It returns the received data as a byte slice.
+// RecvAll receives data from the TCP connection. It first reads
+// 2 bytes to determine the length of the incoming message, and
+// then reads the message data based on that length.
+// It returns the complete message, including the length bytes.
 func (tcpProt TCPProtocol) RecvAll() ([]byte, error) {
 	lengthBytes, err := tcpProt.recvExact(2)
 	if err != nil {
@@ -50,7 +37,12 @@ func (tcpProt TCPProtocol) RecvAll() ([]byte, error) {
 	}
 	length := binary.BigEndian.Uint16(lengthBytes)
 
-	return tcpProt.recvExact(int(length))
+	data, err := tcpProt.recvExact(int(length))
+	if err != nil {
+		return nil, err
+	}
+
+	return append(lengthBytes, data...), nil
 }
 
 // recvExact reads exactly n bytes from the TCP connection.

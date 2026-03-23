@@ -68,16 +68,9 @@ func (a *AgenciaDeQuiniela) CreateBet(firstName, lastName string,
 	}, nil
 }
 
-// StoreBet creates a bet using the CreateBet method and sends it to the server
-// using the given ClientProtocol.
-func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol,
-	firstName, lastName string, document string, birthdate string, number string) error {
-	bet, err := a.CreateBet(firstName, lastName, document, birthdate, number)
-	if err != nil {
-		return err
-	}
+// StoreBet sends the given bet to the server using the provided client protocol.
+func (a *AgenciaDeQuiniela) StoreBet(clientProtocol communication.ClientProtocol, bet utils.Bet) {
 	clientProtocol.SendBet(bet)
-	return nil
 }
 
 // RecvBetStoreResponse receives the response from the server after sending a bet.

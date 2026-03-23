@@ -4,4 +4,5 @@ server:
 log:
   level: "INFO"
 batch:
-  maxAmount: 10
+  maxAmount: 87
+  maxPacketSize: 8192

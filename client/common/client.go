@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
+	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/utils"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
@@ -18,8 +19,10 @@ import (
 var log = logging.MustGetLogger("log")
 
 type ClientConfig struct {
-	ID            string
-	ServerAddress string
+	ID                 string
+	ServerAddress      string
+	BatchMaxAmount     int
+	BatchMaxPacketSize int
 }
 
 type Client struct {
@@ -71,10 +74,12 @@ func InitLogger(logLevel string) error {
 // PrintConfig Print all the configuration parameters of the program.
 // For debugging purposes only
 func PrintConfig(v *viper.Viper) {
-	log.Infof("action: config | result: success | client_id: %s | server_address: %s | log_level: %s",
+	log.Infof("action: config | result: success | client_id: %s | server_address: %s | log_level: %s | batch_max_amount: %d | batch_max_packet_size: %d",
 		v.GetString("id"),
 		v.GetString("server.address"),
 		v.GetString("log.level"),
+		v.GetInt("batch.maxAmount"),
+		v.GetInt("batch.maxPacketSize"),
 	)
 }
 
@@ -93,8 +98,10 @@ func NewClient() *Client {
 	PrintConfig(v)
 
 	config := ClientConfig{
-		ServerAddress: v.GetString("server.address"),
-		ID:            v.GetString("id"),
+		ServerAddress:      v.GetString("server.address"),
+		ID:                 v.GetString("id"),
+		BatchMaxAmount:     v.GetInt("batch.maxAmount"),
+		BatchMaxPacketSize: v.GetInt("batch.maxPacketSize"),
 	}
 	id, err := strconv.ParseUint(config.ID, 10, 8)
 	if err != nil {
@@ -107,19 +114,12 @@ func NewClient() *Client {
 	return &Client{config, *agenciaDeQuiniela}
 }
 
-// sendStoreBetMsg extracts the bet information from the given line and
-// sends it to agenciaDeQuiniela to be stored. Then it receives the response
-// from the server and logs the result of the bet storage operation.
-func (c *Client) sendStoreBetMsg(clientProtocol communication.ClientProtocol, line []string) error {
-	if len(line) != 5 {
-		return fmt.Errorf("Invalid number of fields in line: %v", line)
-	}
-	firstName, lastName, document, birthdate, number := line[0], line[1], line[2], line[3], line[4]
-	log.Infof("action: crear_apuesta | result: success | dni: %v | number: %v", document, number)
-	err := c.agenciaDeQuiniela.StoreBet(clientProtocol, firstName, lastName, document, birthdate, number)
-	if err != nil {
-		return err
-	}
+// sendStoreBetMsg sends a single bet to the server using the provided
+// client protocol. It first sends the bet to the server and then waits
+// for the response. Finally, it logs the result of the bet storage
+// operation.
+func (c *Client) sendStoreBetMsg(clientProtocol communication.ClientProtocol, bet utils.Bet) error {
+	c.agenciaDeQuiniela.StoreBet(clientProtocol, bet)
 	log.Infof("action: registrar_apuesta | result: success")
 
 	betStoreResponse, err := c.agenciaDeQuiniela.RecvBetStoreResponse(clientProtocol)
@@ -139,9 +139,20 @@ func (c *Client) sendStoreBetMsg(clientProtocol communication.ClientProtocol, li
 	return nil
 }
 
-// sendStoreBetMsgs reads the bets from the ./data/data.csv file and sends them to the
-// server using the given ClientProtocol.
-func (c *Client) sendStoreBetMsgs(clientProtocol communication.ClientProtocol) error {
+// sendStoreBetMsgs sends a batch of bets to the server.
+func (c *Client) sendStoreBetMsgs(clientProtocol communication.ClientProtocol, batch []utils.Bet) error {
+	for _, bet := range batch {
+		err := c.sendStoreBetMsg(clientProtocol, bet)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// processBets reads the bets from the ./data/data.csv file and sends them
+// to the server in batches.
+func (c *Client) processBets(clientProtocol communication.ClientProtocol) error {
 	dataFile, err := os.Open("./data/data.csv")
 	if err != nil {
 		return err
@@ -151,16 +162,33 @@ func (c *Client) sendStoreBetMsgs(clientProtocol communication.ClientProtocol) e
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
+			err := c.sendStoreBetMsgs(clientProtocol, clientProtocol.GetBatch())
+			if err != nil {
+				return err
+			}
 			break
 		}
 		if err != nil {
 			return err
 		}
 
-		err = c.sendStoreBetMsg(clientProtocol, line)
+		if len(line) != 5 {
+			return fmt.Errorf("Invalid number of fields in line: %v", line)
+		}
+		firstName, lastName, document, birthdate, number := line[0], line[1], line[2], line[3], line[4]
+		bet, err := c.agenciaDeQuiniela.CreateBet(firstName, lastName, document, birthdate, number)
 		if err != nil {
 			return err
 		}
+
+		if clientProtocol.BatchReachMaxSize(bet, c.config.BatchMaxAmount, c.config.BatchMaxPacketSize) {
+			err := c.sendStoreBetMsgs(clientProtocol, clientProtocol.GetBatch())
+			if err != nil {
+				return err
+			}
+		}
+
+		clientProtocol.AppendToBatch(bet)
 	}
 
 	defer dataFile.Close()
@@ -189,7 +217,7 @@ func (c *Client) Start() {
 	default:
 	}
 
-	err = c.sendStoreBetMsgs(clientProtocol)
+	err = c.processBets(clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
 	}
