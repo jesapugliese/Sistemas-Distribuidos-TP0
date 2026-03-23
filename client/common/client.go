@@ -114,38 +114,32 @@ func NewClient() *Client {
 	return &Client{config, *agenciaDeQuiniela}
 }
 
-// storeBetWithAgencia sends a single bet to the server. It first sends the
-// bet to the server and then waits for the response. Finally, it logs the
-// result of the bet storage operation.
-func (c *Client) storeBetWithAgencia(clientProtocol communication.ClientProtocol, bet utils.Bet) error {
-	c.agenciaDeQuiniela.StoreBet(clientProtocol, bet)
-	log.Infof("action: registrar_apuesta | result: success")
-
-	betStoreResponse, err := c.agenciaDeQuiniela.GetStoreBetResult(clientProtocol)
-	if err != nil {
-		return err
-	}
-	log.Infof("action: apuesta_enviada | result: %s | dni: %v | number: %v",
-		func() string {
-			if betStoreResponse.Success {
-				return "success"
-			}
-			return "fail"
-		}(),
-		betStoreResponse.Document,
-		betStoreResponse.Number,
-	)
-	return nil
-}
-
 // sendBatch sends the batch size to the server followed by the batch of bets.
+// After sending the batch, it waits for the response of each bet and logs the result.
 func (c *Client) sendBatch(clientProtocol communication.ClientProtocol, batch []utils.Bet) error {
 	clientProtocol.SendBatchSizeMsg(len(batch))
 	for _, bet := range batch {
-		err := c.storeBetWithAgencia(clientProtocol, bet)
+		err := c.agenciaDeQuiniela.StoreBet(clientProtocol, bet)
 		if err != nil {
 			return err
 		}
+		log.Infof("action: registrar_apuesta | result: success")
+	}
+	for range batch {
+		betStoreResponse, err := c.agenciaDeQuiniela.GetStoreBetResult(clientProtocol)
+		if err != nil {
+			return err
+		}
+		log.Infof("action: apuesta_enviada | result: %s | dni: %v | number: %v",
+			func() string {
+				if betStoreResponse.Success {
+					return "success"
+				}
+				return "fail"
+			}(),
+			betStoreResponse.Document,
+			betStoreResponse.Number,
+		)
 	}
 	return nil
 }
