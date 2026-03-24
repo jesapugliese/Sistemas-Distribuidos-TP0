@@ -72,21 +72,7 @@ class Server:
             self._threads.append(client_thread)
 
             if len(self._clients_sockets) == self._clients_count:
-                # Wait until all clients have finished sending their bets
-                for queue in self._clients_working_queues.values():
-                    queue.join()
-                
-                # Draw winners and notify agencies
-                try:
-                    self._central_de_loteria.draw_winners()
-                except Exception as e:
-                    logging.error(f"action: draw_winners | result: fail | error: {e}")
-                    break
-                logging.info("action: sorteo | result: success")
-                for id, queue in self._clients_working_queues.items():
-                    queue.put((self._central_de_loteria.notify_winners_to_agency, 
-                               (self._server_protocol, id, self._clients_sockets[id])))
-
+                self._sorteo()
                 self._running = False
 
         self._graceful_shutdown()
@@ -129,8 +115,32 @@ class Server:
             if task is None: # EXIT
                 break
             func, args = task
-            func(*args)
-            self._clients_working_queues[agency_id].task_done()
+            try:
+                func(*args)
+            except Exception as e:
+                logging.error(f"action: worker_task | result: fail | error: {e}")
+            finally:
+                self._clients_working_queues[agency_id].task_done()
+
+    def _sorteo(self):
+        """
+        Draw winners and notify agencies
+        """
+
+        try:
+            # Wait until all clients have finished sending their bets
+            for queue in self._clients_working_queues.values():
+                queue.join()
+            
+            # Draw winners and notify agencies
+            self._central_de_loteria.draw_winners()
+            logging.info("action: sorteo | result: success")
+            for id, queue in self._clients_working_queues.items():
+                queue.put((self._central_de_loteria.notify_winners_to_agency, 
+                            (self._server_protocol, id, self._clients_sockets[id])))
+        except Exception:
+            logging.error("action: sorteo | result: fail")
+            return
 
     def _accept_new_connection(self):
         """
