@@ -126,14 +126,13 @@ func (c *Client) Start() {
 	clientProtocol, err := communication.NewClientProtocol(c.config.ServerAddress, c.config.ID)
 	if err != nil {
 		log.Criticalf("%s", err)
-		clientProtocol.Close()
 		return
 	}
+	defer clientProtocol.Close()
 
 	select {
 	case <-signalChannel:
 		log.Infof("action: sigterm_received | result: success | client_id: %v", c.config.ID)
-		clientProtocol.Close()
 		return
 	default:
 	}
@@ -143,7 +142,6 @@ func (c *Client) Start() {
 		document, birthdate, number)
 	if err != nil {
 		log.Criticalf("%s", err)
-		clientProtocol.Close()
 		return
 	}
 	log.Infof("action: registrar_apuesta | result: success")
@@ -151,7 +149,6 @@ func (c *Client) Start() {
 	betStoreResponse, err := c.agenciaDeQuiniela.RecvBetStoreResponse(clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
-		clientProtocol.Close()
 		return
 	}
 	log.Infof("action: apuesta_enviada | result: %s | dni: %v | number: %v",
@@ -164,6 +161,4 @@ func (c *Client) Start() {
 		betStoreResponse.Document,
 		betStoreResponse.Number,
 	)
-
-	clientProtocol.Close()
 }
