@@ -83,3 +83,8 @@ func (a *AgenciaDeQuiniela) StoreBetsBatch(clientProtocol communication.ClientPr
 func (a *AgenciaDeQuiniela) GetStoreBetsResult(clientProtocol communication.ClientProtocol) (bool, error) {
 	return clientProtocol.RecvStoreBetsResponse()
 }
+
+// GetWinnersNotification receives the winners notification from the server after the lottery draw.
+func (a *AgenciaDeQuiniela) GetWinnersNotification(clientProtocol communication.ClientProtocol) ([]uint32, error) {
+	return clientProtocol.RecvWinnersNotification()
+}

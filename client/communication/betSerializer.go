@@ -26,6 +26,18 @@ func (as BetSerializer) CalculateStoreBetsResponsePacketSize() int {
 	return 1
 }
 
+// CalculateWinnersCountPacketSize calculates the size of the packet that contains the
+// amount of winners.
+func (as BetSerializer) CalculateWinnersCountPacketSize() int {
+	return 2
+}
+
+// CalculateWinnersNotificationPacketSize calculates the size of the packet that contains
+// the winners notification, given the amount of winners.
+func (as BetSerializer) CalculateWinnersNotificationPacketSize(winnersCount int) int {
+	return winnersCount * 4
+}
+
 // SerializeIdentificationMsg generates the serialized message to identify the client (agency ID).
 // Serialization format:
 //   - AgencyID: 1 byte (integer)
@@ -135,4 +147,35 @@ func (as BetSerializer) SerializeBatchBetsAmount(batchBetsAmount int) []byte {
 	serialized = append(serialized, tmp2[:]...)
 
 	return serialized
+}
+
+// DeserializeWinnersCount deserializes the message that indicates the count of winners.
+// Deserialization format:
+//   - WinnersCount: 2 bytes (integer)
+func (as BetSerializer) DeserializeWinnersCount(winnersCountBytes []byte) int {
+	if len(winnersCountBytes) != 2 {
+		return 0
+	}
+
+	winnersCount := binary.BigEndian.Uint16(winnersCountBytes)
+
+	return int(winnersCount)
+}
+
+// DeserializeWinnersNotification deserializes the winners notification message that contains
+// the document numbers of all the winners.
+// Deserialization format:
+//   - Winners: list of documents (4 bytes each)
+func (as BetSerializer) DeserializeWinnersNotification(winnersBytes []byte) ([]uint32, error) {
+	if len(winnersBytes)%4 != 0 {
+		return nil, fmt.Errorf("Invalid data length for winners notification")
+	}
+
+	var winners []uint32
+	for i := 0; i < len(winnersBytes); i += 4 {
+		winner := binary.BigEndian.Uint32(winnersBytes[i : i+4])
+		winners = append(winners, winner)
+	}
+
+	return winners, nil
 }

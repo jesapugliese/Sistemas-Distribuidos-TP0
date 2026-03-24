@@ -73,6 +73,22 @@ func (cp ClientProtocol) RecvStoreBetsResponse() (bool, error) {
 	return cp.betSerializer.DeserializeStoreBetsResponse(storeBetsResponseBytes)
 }
 
+// RecvWinnersNotification receives the winners notification from the server, which contains
+// the winning document numbers for the lottery draw.
+func (cp ClientProtocol) RecvWinnersNotification() ([]uint32, error) {
+	winnersCountBytes, err := cp.tcpProtocol.RecvExact(cp.betSerializer.CalculateWinnersCountPacketSize())
+	if err != nil {
+		return nil, err
+	}
+	winnersCount := cp.betSerializer.DeserializeWinnersCount(winnersCountBytes)
+
+	winnersBytes, err := cp.tcpProtocol.RecvExact(cp.betSerializer.CalculateWinnersNotificationPacketSize(winnersCount))
+	if err != nil {
+		return nil, err
+	}
+	return cp.betSerializer.DeserializeWinnersNotification(winnersBytes)
+}
+
 // Close closes the TCP connection.
 func (cp ClientProtocol) Close() {
 	cp.tcpProtocol.Close()

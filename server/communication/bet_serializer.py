@@ -20,6 +20,20 @@ class BetSerializer:
         success_byte = b'\x01' if success else b'\x00'
         return success_byte
 
+    def serialize_winners_notification(self, winners) -> bytes:
+        """
+        Serializes a notification message with the winners of the lottery.
+        The winners are sent as a list of documents (integers).
+        The format of the serialized message is:
+        - winners_count: 2 bytes (integer)
+        - winners_documents: for each winner, 4 bytes (integer) representing the document number
+        """
+
+        winners_count = len(winners)
+        winners_count_bytes = winners_count.to_bytes(2, 'big')
+        winners_documents_bytes = b''.join([winner.to_bytes(4, 'big') for winner in winners])
+        return winners_count_bytes + winners_documents_bytes
+
     def deserialize_identification_msg(self, identification_msg_bytes) -> int:
         """
         Deserializes the given bytes into an integer representing the agency ID. 

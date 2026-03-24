@@ -22,6 +22,7 @@ class Server:
                       f"logging_level: {logging_level}")
 
         self._running = True
+        self._clients = []
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
@@ -41,17 +42,20 @@ class Server:
         finishes, servers starts to accept new connections again.
         """
 
-        clients = []
         while self._running:
             client_socket = self._accept_new_connection()
             if not client_socket:
                 continue
-            self._server_protocol.update_client_socket(client_socket)
-            agency_id = self._server_protocol.recv_agency_id_msg()
-            clients.append((agency_id, client_socket))
-            self._handle_client_connection()
+            agency_id = self._server_protocol.recv_agency_id_msg(client_socket)
+            self._clients.append((agency_id, client_socket))
+            self._handle_client_connection(client_socket)
 
-    def _handle_client_connection(self):
+            if len(self._clients) == 5:
+                self._central_de_loteria.draw_winners()
+                logging.info("action: sorteo | result: success")
+                self._central_de_loteria.notify_winners_to_agencies(self._server_protocol, self._clients)
+
+    def _handle_client_connection(self, client_socket):
         """
         Receives messages batches of bets from the client and processes them until 
         a batch size message with a non-positive batch size is received, 
@@ -60,21 +64,17 @@ class Server:
 
         try:
             while True:
-                batch_bets_amount = self._server_protocol.recv_batch_bets_amount_msg()
+                batch_bets_amount = self._server_protocol.recv_batch_bets_amount_msg(client_socket)
                 logging.info(f"action: recibir_cantidad_apuestas_en_batch | result: success | cantidad_apuestas_en_batch: {batch_bets_amount}")
                 if batch_bets_amount <= 0:
                     break
-                err = self._central_de_loteria.store_bets(self._server_protocol, batch_bets_amount)
+                err = self._central_de_loteria.store_bets(self._server_protocol, client_socket, batch_bets_amount)
                 if err:
                     logging.error(f"action: apuesta_recibida | result: fail | cantidad: {batch_bets_amount}")
                 else:
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {batch_bets_amount}")
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
-        finally:
-            logging.info('action: close_client_connection | result: in_progress')
-            self._server_protocol.close_client_socket()
-            logging.info('action: close_client_connection | result: success')
 
     def _accept_new_connection(self):
         """
@@ -145,6 +145,7 @@ class Server:
 
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
         self._server_socket.close()
-        self._server_protocol.close_client_socket()
         self._running = False
+        for _, client_socket in self._clients:
+            client_socket.close()
         logging.info('action: signal_handler | result: success | signal: SIGTERM')

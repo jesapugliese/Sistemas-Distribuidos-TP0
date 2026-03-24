@@ -195,7 +195,18 @@ func (c *Client) processBets(ctx context.Context, clientProtocol communication.C
 		clientProtocol.AppendToBatch(bet)
 	}
 
-	return clientProtocol.SendBatchBetsAmountMsg(0)
+	err = clientProtocol.SendBatchBetsAmountMsg(0)
+	if err != nil {
+		return err
+	}
+
+	winners, err := c.agenciaDeQuiniela.GetWinnersNotification(clientProtocol)
+	if err != nil {
+		return err
+	}
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
+
+	return nil
 }
 
 // Start is the main method of the client. It is responsible for starting the client and
