@@ -8,20 +8,23 @@ class CentralDeLoteriaNacional:
 
         self._lock_bets_storage = threading.Lock()
     
-    def store_bets(self, bets):
+    def store_bets(self, server_protocol, client_socket, batch_bets_amount):
         """
         Receive a batch of bets from the client through the server protocol, 
         store them using the store_bets function, and send a response back 
         to the client indicating whether the storage was successful or not.
         """
-
         success = True
+
+        bets = server_protocol.recv_store_bets_batch_msg(client_socket, batch_bets_amount)
 
         with self._lock_bets_storage:
             try:
                 store_bets(bets)
             except Exception:
                 success = False
+
+        server_protocol.send_store_bets_response(client_socket, success)
 
         return success
 

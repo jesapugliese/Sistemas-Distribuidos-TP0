@@ -78,11 +78,7 @@ class Server:
                 logging.info(f"action: recibir_cantidad_apuestas_en_batch | result: success | cantidad_apuestas_en_batch: {batch_bets_amount}")
                 if batch_bets_amount <= 0:
                     break
-                
-                bets = self._server_protocol.recv_store_bets_batch_msg(client_socket, batch_bets_amount)
-                success = self._central_de_loteria.store_bets(bets)
-                self._server_protocol.send_store_bets_response(client_socket, success)
-
+                success = self._central_de_loteria.store_bets(self._server_protocol, client_socket, batch_bets_amount)
                 if success:
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {batch_bets_amount}")
                 else:
