@@ -56,6 +56,8 @@ class Server:
                 logging.info("action: sorteo | result: success")
                 self._central_de_loteria.notify_winners_to_agencies(self._server_protocol, self._client_sockets)
 
+        self._graceful_shutdown()
+
     def _handle_client_connection(self, client_socket):
         """
         Receives messages batches of bets from the client and processes them until 
@@ -145,8 +147,14 @@ class Server:
         """
 
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
-        self._server_socket.close()
         self._running = False
+        logging.info('action: signal_handler | result: success | signal: SIGTERM')
+
+    def _graceful_shutdown(self):
+        """
+        Graceful shutdown of the server.
+        """
+        
+        self._server_socket.close()
         for _, client_socket in self._client_sockets:
             client_socket.close()
-        logging.info('action: signal_handler | result: success | signal: SIGTERM')
