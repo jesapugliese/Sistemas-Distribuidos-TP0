@@ -22,7 +22,7 @@ class Server:
                       f"logging_level: {logging_level}")
 
         self._running = True
-        self._clients = os.getenv("CLIENTES")
+        self._clients = int(os.getenv("CLIENTES"))
         self._client_sockets = []
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
