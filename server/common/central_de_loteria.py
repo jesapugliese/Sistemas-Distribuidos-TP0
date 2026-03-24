@@ -42,13 +42,12 @@ class CentralDeLoteriaNacional:
                     self._winners[bet.agency] = []
                 self._winners[bet.agency].append(int(bet.document))
         
-    def notify_winners_to_agencies(self, server_protocol, clients):
+    def notify_winners_to_agency(self, server_protocol, agency_id, client_socket):
         """
-        Notify the winners to the agencies through the server protocol.
+        Notify the winners to the agency through the server protocol.
         """
 
-        for agency_id, client_socket in clients:
-            agency_winners = []
-            if agency_id in self._winners:
-                agency_winners = self._winners[agency_id]
-            server_protocol.send_winners_notification(client_socket, agency_winners)
+        agency_winners = []
+        if agency_id in self._winners:
+            agency_winners = self._winners[agency_id]
+        server_protocol.send_winners_notification(client_socket, agency_winners)

@@ -5,6 +5,7 @@ import socket
 import threading
 
 from configparser import ConfigParser
+from queue import Queue
 from common.central_de_loteria import CentralDeLoteriaNacional
 from communication.server_protocol import ServerProtocol
 
@@ -23,9 +24,12 @@ class Server:
                       f"logging_level: {logging_level}")
 
         self._running = True
-        self._clients = int(os.getenv("CLIENTES"))
-        self._client_sockets = []
-        
+        self._clients_count = int(os.getenv("CLIENTES"))
+        self._clients_sockets = {}
+        self._clients_working_queues = {}
+
+        self._lock_clients_working_queues = threading.Lock()
+
         self._threads = []
         
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -51,19 +55,39 @@ class Server:
             client_socket = self._accept_new_connection()
             if not client_socket:
                 continue
+
             agency_id = self._server_protocol.recv_agency_id_msg(client_socket)
-            self._client_sockets.append((agency_id, client_socket))
-            
-            client_thread = threading.Thread(target=self._handle_client_connection, args=(client_socket,))
+            self._clients_sockets[agency_id] = client_socket
+
+            with self._lock_clients_working_queues:
+                self._clients_working_queues[agency_id] = Queue()
+            self._clients_working_queues[agency_id].put((self._handle_client_connection, (client_socket,)))
+
+            client_thread = threading.Thread(target=self.worker, args=(agency_id,))
             client_thread.start()
             self._threads.append(client_thread)
 
-            if len(self._client_sockets) == self._clients:
-                for t in self._threads:
-                    t.join()
+            if len(self._clients_sockets) == self._clients_count:
+                # Wait until all clients have finished sending their bets
+                for queue in self._clients_working_queues.values():
+                    queue.join()
+                
+                # Draw winners and notify agencies
                 self._central_de_loteria.draw_winners()
                 logging.info("action: sorteo | result: success")
-                self._central_de_loteria.notify_winners_to_agencies(self._server_protocol, self._client_sockets)
+                for id, queue in self._clients_working_queues.items():
+                    queue.put((self._central_de_loteria.notify_winners_to_agency, 
+                               (self._server_protocol, id, self._clients_sockets[id])))
+
+                self._running = False
+        
+        # Wait until all notifications have been sent and close client sockets
+        for queue in self._clients_working_queues.values():
+            queue.join()
+            queue.put(None) # EXIT
+            queue.join()
+        for client_socket in self._clients_sockets.values():
+            client_socket.close()
 
     def _handle_client_connection(self, client_socket):
         """
@@ -85,6 +109,26 @@ class Server:
                     logging.error(f"action: apuesta_recibida | result: fail | cantidad: {batch_bets_amount}")
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
+
+    def worker(self, agency_id):
+        """
+        Worker function for client threads
+
+        Function that runs in a loop, waiting for tasks to be added to the 
+        client's working queue. When a task is added, it is executed. 
+        The loop continues until a None task is added to the queue, 
+        indicating that the worker should exit.
+        """
+
+        while True:
+            with self._lock_clients_working_queues:
+                queue = self._clients_working_queues[agency_id]
+            task = queue.get()
+            if task is None: # EXIT
+                break
+            func, args = task
+            func(*args)
+            self._clients_working_queues[agency_id].task_done()
 
     def _accept_new_connection(self):
         """
@@ -156,6 +200,6 @@ class Server:
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
         self._server_socket.close()
         self._running = False
-        for _, client_socket in self._client_sockets:
+        for client_socket in self._clients_sockets.values():
             client_socket.close()
         logging.info('action: signal_handler | result: success | signal: SIGTERM')
