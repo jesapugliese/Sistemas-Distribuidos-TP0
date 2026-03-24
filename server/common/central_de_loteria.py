@@ -1,9 +1,12 @@
 from common.utils import store_bets, load_bets, has_won
+import threading
 
 
 class CentralDeLoteriaNacional:
     def __init__(self):
         self._winners = {}
+
+        self._lock_bets_storage = threading.Lock()
     
     def store_bets(self, bets):
         """
@@ -14,10 +17,11 @@ class CentralDeLoteriaNacional:
 
         success = True
 
-        try:
-            store_bets(bets)
-        except Exception:
-            success = False
+        with self._lock_bets_storage:
+            try:
+                store_bets(bets)
+            except Exception:
+                success = False
 
         return success
 

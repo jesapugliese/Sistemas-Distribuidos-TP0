@@ -27,7 +27,6 @@ class Server:
         self._client_sockets = []
         
         self._threads = []
-        self._lock_bets_storage = threading.Lock()
         
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
@@ -81,8 +80,7 @@ class Server:
                     break
                 
                 bets = self._server_protocol.recv_store_bets_batch_msg(client_socket, batch_bets_amount)
-                with self._lock_bets_storage:
-                    success = self._central_de_loteria.store_bets(bets)
+                success = self._central_de_loteria.store_bets(bets)
                 self._server_protocol.send_store_bets_response(client_socket, success)
 
                 if success:
