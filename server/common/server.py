@@ -22,7 +22,8 @@ class Server:
                       f"logging_level: {logging_level}")
 
         self._running = True
-        self._clients = []
+        self._clients = os.getenv("CLIENTES")
+        self._client_sockets = []
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
@@ -47,13 +48,13 @@ class Server:
             if not client_socket:
                 continue
             agency_id = self._server_protocol.recv_agency_id_msg(client_socket)
-            self._clients.append((agency_id, client_socket))
+            self._client_sockets.append((agency_id, client_socket))
             self._handle_client_connection(client_socket)
 
-            if len(self._clients) == 5:
+            if len(self._client_sockets) == self._clients:
                 self._central_de_loteria.draw_winners()
                 logging.info("action: sorteo | result: success")
-                self._central_de_loteria.notify_winners_to_agencies(self._server_protocol, self._clients)
+                self._central_de_loteria.notify_winners_to_agencies(self._server_protocol, self._client_sockets)
 
     def _handle_client_connection(self, client_socket):
         """
@@ -146,6 +147,6 @@ class Server:
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
         self._server_socket.close()
         self._running = False
-        for _, client_socket in self._clients:
+        for _, client_socket in self._client_sockets:
             client_socket.close()
         logging.info('action: signal_handler | result: success | signal: SIGTERM')
