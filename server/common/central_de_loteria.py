@@ -5,7 +5,7 @@ class CentralDeLoteriaNacional:
     def __init__(self):
         self._winners = {}
     
-    def store_bets(self, server_protocol, client_socket, batch_bets_amount):
+    def store_bets(self, bets):
         """
         Receive a batch of bets from the client through the server protocol, 
         store them using the store_bets function, and send a response back 
@@ -14,16 +14,12 @@ class CentralDeLoteriaNacional:
 
         success = True
 
-        bets = server_protocol.recv_store_bets_batch_msg(client_socket, batch_bets_amount)
-
         try:
             store_bets(bets)
         except Exception:
             success = False
-        
-        server_protocol.send_store_bets_response(client_socket, success)
 
-        return None
+        return success
 
     def draw_winners(self):
         """

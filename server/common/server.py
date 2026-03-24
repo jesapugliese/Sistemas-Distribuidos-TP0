@@ -2,6 +2,7 @@ import logging
 import os
 import signal
 import socket
+import threading
 
 from configparser import ConfigParser
 from common.central_de_loteria import CentralDeLoteriaNacional
@@ -24,6 +25,10 @@ class Server:
         self._running = True
         self._clients = int(os.getenv("CLIENTES"))
         self._client_sockets = []
+        
+        self._threads = []
+        self._lock_bets_storage = threading.Lock()
+        
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
@@ -49,9 +54,14 @@ class Server:
                 continue
             agency_id = self._server_protocol.recv_agency_id_msg(client_socket)
             self._client_sockets.append((agency_id, client_socket))
-            self._handle_client_connection(client_socket)
+            
+            client_thread = threading.Thread(target=self._handle_client_connection, args=(client_socket,))
+            client_thread.start()
+            self._threads.append(client_thread)
 
             if len(self._client_sockets) == self._clients:
+                for t in self._threads:
+                    t.join()
                 self._central_de_loteria.draw_winners()
                 logging.info("action: sorteo | result: success")
                 self._central_de_loteria.notify_winners_to_agencies(self._server_protocol, self._client_sockets)
@@ -69,11 +79,16 @@ class Server:
                 logging.info(f"action: recibir_cantidad_apuestas_en_batch | result: success | cantidad_apuestas_en_batch: {batch_bets_amount}")
                 if batch_bets_amount <= 0:
                     break
-                err = self._central_de_loteria.store_bets(self._server_protocol, client_socket, batch_bets_amount)
-                if err:
-                    logging.error(f"action: apuesta_recibida | result: fail | cantidad: {batch_bets_amount}")
-                else:
+                
+                bets = self._server_protocol.recv_store_bets_batch_msg(client_socket, batch_bets_amount)
+                with self._lock_bets_storage:
+                    success = self._central_de_loteria.store_bets(bets)
+                self._server_protocol.send_store_bets_response(client_socket, success)
+
+                if success:
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {batch_bets_amount}")
+                else:
+                    logging.error(f"action: apuesta_recibida | result: fail | cantidad: {batch_bets_amount}")
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
 
