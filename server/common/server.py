@@ -80,14 +80,8 @@ class Server:
                                (self._server_protocol, id, self._clients_sockets[id])))
 
                 self._running = False
-        
-        # Wait until all notifications have been sent and close client sockets
-        for queue in self._clients_working_queues.values():
-            queue.join()
-            queue.put(None) # EXIT
-            queue.join()
-        for client_socket in self._clients_sockets.values():
-            client_socket.close()
+
+        self._graceful_shutdown()
 
     def _handle_client_connection(self, client_socket):
         """
@@ -198,8 +192,21 @@ class Server:
         """
 
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
-        self._server_socket.close()
         self._running = False
+        self._graceful_shutdown()
+        logging.info('action: signal_handler | result: success | signal: SIGTERM')
+
+    def _graceful_shutdown(self):
+        """
+        Graceful shutdown of the server
+
+        Function that gracefully shutdown the server. 
+        """
+
+        for queue in self._clients_working_queues.values():
+            queue.join()
+            queue.put(None) # EXIT
+        for thread in self._threads:
+            thread.join()
         for client_socket in self._clients_sockets.values():
             client_socket.close()
-        logging.info('action: signal_handler | result: success | signal: SIGTERM')
