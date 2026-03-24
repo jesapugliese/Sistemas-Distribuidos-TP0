@@ -56,7 +56,11 @@ class Server:
             if not client_socket:
                 continue
 
-            agency_id = self._server_protocol.recv_agency_id_msg(client_socket)
+            try:
+                agency_id = self._server_protocol.recv_agency_id_msg(client_socket)
+            except Exception as e:
+                logging.error(f"action: receive_message | result: fail | error: {e}")
+                break
             self._clients_sockets[agency_id] = client_socket
 
             with self._lock_clients_working_queues:
@@ -73,7 +77,11 @@ class Server:
                     queue.join()
                 
                 # Draw winners and notify agencies
-                self._central_de_loteria.draw_winners()
+                try:
+                    self._central_de_loteria.draw_winners()
+                except Exception as e:
+                    logging.error(f"action: draw_winners | result: fail | error: {e}")
+                    break
                 logging.info("action: sorteo | result: success")
                 for id, queue in self._clients_working_queues.items():
                     queue.put((self._central_de_loteria.notify_winners_to_agency, 
@@ -193,14 +201,11 @@ class Server:
 
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
         self._running = False
-        self._graceful_shutdown()
         logging.info('action: signal_handler | result: success | signal: SIGTERM')
 
     def _graceful_shutdown(self):
         """
-        Graceful shutdown of the server
-
-        Function that gracefully shutdown the server. 
+        Graceful shutdown of the server.
         """
 
         for queue in self._clients_working_queues.values():
@@ -208,5 +213,6 @@ class Server:
             queue.put(None) # EXIT
         for thread in self._threads:
             thread.join()
+        self._server_socket.close()
         for client_socket in self._clients_sockets.values():
             client_socket.close()
