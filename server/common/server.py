@@ -54,6 +54,9 @@ class Server:
                 self._central_de_loteria.draw_winners()
                 logging.info("action: sorteo | result: success")
                 self._central_de_loteria.notify_winners_to_agencies(self._server_protocol, self._clients)
+                self._running = False
+        for _, client_socket in self._clients:
+            client_socket.close()
 
     def _handle_client_connection(self, client_socket):
         """
