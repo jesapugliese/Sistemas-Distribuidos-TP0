@@ -47,14 +47,17 @@ class Server:
             client_socket = self._accept_new_connection()
             if not client_socket:
                 continue
-            agency_id = self._server_protocol.recv_agency_id_msg(client_socket)
+            try:
+                agency_id = self._server_protocol.recv_agency_id_msg(client_socket)
+            except Exception as e:
+                logging.error(f"action: receive_message | result: fail | error: {e}")
+                break
             self._client_sockets.append((agency_id, client_socket))
             self._handle_client_connection(client_socket)
 
             if len(self._client_sockets) == self._clients:
-                self._central_de_loteria.draw_winners()
-                logging.info("action: sorteo | result: success")
-                self._central_de_loteria.notify_winners_to_agencies(self._server_protocol, self._client_sockets)
+                self._sorteo()
+                self._running = False
 
         self._graceful_shutdown()
 
@@ -78,6 +81,19 @@ class Server:
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {batch_bets_amount}")
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
+
+    def _sorteo(self):
+        """
+        Draw winners and notify agencies
+        """
+
+        try:
+            self._central_de_loteria.draw_winners()
+            logging.info("action: sorteo | result: success")
+            self._central_de_loteria.notify_winners_to_agencies(self._server_protocol, self._client_sockets)
+        except Exception:
+            logging.error("action: sorteo | result: fail")
+            return
 
     def _accept_new_connection(self):
         """
