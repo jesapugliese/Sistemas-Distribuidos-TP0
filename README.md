@@ -82,8 +82,6 @@ Para que el servidor y el cliente terminen de forma graceful al recibir la signa
 
 ## Parte 2: Repaso de Comunicaciones
 
-### Ejercicio N°5:
-
 #### Ejecución:
 
 1. Levantar los containers y ejecutar el programa:  
@@ -100,6 +98,8 @@ Para que el servidor y el cliente terminen de forma graceful al recibir la signa
    ```bash
    make docker-compose-down
    ```
+
+### Ejercicio N°5:
 
 #### Diagrama de Clases:
 
@@ -137,23 +137,6 @@ Para la comunicación entre el client y el server, se utilizo el protocolo de co
 
 ### Ejercicio N°6:
 
-#### Ejecución:
-
-1. Levantar los containers y ejecutar el programa:  
-   ```bash  
-   make docker-compose-up
-   ```  
-
-2. Ver los logs:  
-   ```bash
-   make docker-compose-logs
-   ```  
-
-3. Detener y eliminar los containers, redes, imagenes y volumenes:  
-   ```bash
-   make docker-compose-down
-   ```
-
 #### Diagrama de Clases:
 
 <p align="center">
@@ -187,3 +170,25 @@ Para la comunicación entre el client y el server, se utilizo el protocolo de co
 
 - Mensaje de resultado de registro de las apuestas del batch (server → client):  
    1 byte con valor igual a 1 si la operación resultó exitosa.
+
+### Ejercicio N°7:
+
+#### Funcionamiento:
+
+- Se definió una variable de entorno para el container del server denominada `CLIENTES` que guarda la cantidad de clientes del programa.  
+- Para que el server pueda guardarse los sockets de los clientes asociados a sus agencias, se los guardó en un diccionario. Para la asociación ID de agencia - socket, se definió un mensaje que el cliente manda al comienzo de la comunicación que contiene únicamente el ID de la agencia.  
+- Cuando el cliente termina de enviar todos sus batches, espera a la notificación del server sobre el resultado del sorteo.  
+- Cuando el server termina de procesar todos los batches (de lo que se entera porque le llega un mensaje con un `batch_bets_amount = 0`), si ya terminó de procesar todos los clientes, entonces realiza el sorteo.  
+- Para llevar a cabo el sorteo, se llama al método `draw_winners` de `CentralDeLoteriaNacional` que usa las funciones `load_bets` y `has_won` para poder almacenar en un atributo los ganadores asociados a cada agencia.  
+- Se imprime un log en server, y luego se notifica a cada agencia en particular sus ganadores con el método `notify_winners_to_agencies`.
+- Cuando el cliente recibe la notificación, imprime un log y cierra su conexión.
+
+#### Protocolo de Comunicación:
+
+Se mantuvo el mismo protocolo de mensajes que en el ejercicio anterior, agregando unos nuevos:  
+
+- Mensaje del ID de la agencia (client → server):  
+   1 byte representando el ID de la agencia.
+
+- Mensaje de notificación de ganadores (server → client):  
+   1 byte con la cantidad de ganadores seguido de 4 bytes repetidos tantas veces como ganadores haya, pues cada conjunto de 4 bytes es un número de documento.  
