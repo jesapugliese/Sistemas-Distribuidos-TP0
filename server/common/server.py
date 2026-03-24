@@ -47,6 +47,8 @@ class Server:
                 continue
             self._server_protocol.update_client_socket(client_socket)
             self._handle_client_connection()
+        
+        self._graceful_shutdown()
 
     def _handle_client_connection(self):
         """
@@ -149,6 +151,5 @@ class Server:
         Graceful shutdown of the server.
         """
         
-        self._server_socket.shutdown(socket.SHUT_RDWR)
         self._server_socket.close()
         self._server_protocol.close_client_socket()
