@@ -88,7 +88,6 @@ class Server:
         Graceful shutdown of the server.
         """
         
-        self._server_socket.shutdown(socket.SHUT_RDWR)
         self._server_socket.close()
         if self._client_socket:
             self._client_socket.close()
