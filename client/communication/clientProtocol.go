@@ -40,6 +40,13 @@ func createClientSocket(serverAddress string, clientID string) (net.Conn, error)
 	return conn, nil
 }
 
+// SendIdentificationMsg sends the identification message (agency ID) to the server
+// using the TCP protocol.
+func (cp ClientProtocol) SendIdentificationMsg(agencyID uint8) error {
+	identificationMsgBytes := cp.betSerializer.SerializeIdentificationMsg(agencyID)
+	return cp.tcpProtocol.SendAll(identificationMsgBytes)
+}
+
 // SendStoreBetsBatchMsg sends the given batch of bets to the server using the TCP protocol.
 func (cp ClientProtocol) SendStoreBetsBatchMsg(batch []utils.Bet) error {
 	storeBetsBatchMsgBytes, err := cp.betSerializer.SerializeStoreBetsBatchMsg(batch)

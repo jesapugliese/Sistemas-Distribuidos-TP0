@@ -41,11 +41,14 @@ class Server:
         finishes, servers starts to accept new connections again.
         """
 
+        clients = []
         while self._running:
             client_socket = self._accept_new_connection()
             if not client_socket:
                 continue
             self._server_protocol.update_client_socket(client_socket)
+            agency_id = self._server_protocol.recv_agency_id_msg()
+            clients.append((agency_id, client_socket))
             self._handle_client_connection()
 
     def _handle_client_connection(self):

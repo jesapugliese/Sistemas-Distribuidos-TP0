@@ -6,6 +6,9 @@ class BetSerializer:
 
     def get_batch_bets_amount_msg_length(self):
         return self.batch_bets_amount_msg_length
+    
+    def get_identification_msg_length(self):
+        return 1
 
     def serialize_store_bets_response(self, success) -> bytes:
         """
@@ -16,6 +19,15 @@ class BetSerializer:
 
         success_byte = b'\x01' if success else b'\x00'
         return success_byte
+
+    def deserialize_identification_msg(self, identification_msg_bytes) -> int:
+        """
+        Deserializes the given bytes into an integer representing the agency ID. 
+        The expected format of the bytes is:
+        - agency_id: 1 byte (integer)
+        """
+
+        return identification_msg_bytes[0]
 
     def deserialize_bet(self, bet_bytes) -> Bet:
         """

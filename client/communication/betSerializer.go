@@ -26,6 +26,17 @@ func (as BetSerializer) CalculateStoreBetsResponsePacketSize() int {
 	return 1
 }
 
+// SerializeIdentificationMsg generates the serialized message to identify the client (agency ID).
+// Serialization format:
+//   - AgencyID: 1 byte (integer)
+func (as BetSerializer) SerializeIdentificationMsg(agencyID uint8) []byte {
+	var serialized []byte
+
+	serialized = append(serialized, byte(agencyID))
+
+	return serialized
+}
+
 // SerializeStoreBetMsg generates serializes the message to store a bet.
 // Serialization format:
 //   - MsgLen: 2 bytes (integer)

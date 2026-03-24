@@ -8,6 +8,15 @@ class ServerProtocol:
         self._bet_serializer = BetSerializer()
         self._tcp_protocol = TCPProtocol()
 
+    def recv_agency_id_msg(self) -> int:
+        """
+        Receives the identification message from the client socket and returns the agency ID as an integer.
+        """
+
+        identification_msg_bytes = self._tcp_protocol.recv_exact(self._client_socket, 
+                                                                self._bet_serializer.get_identification_msg_length())
+        return self._bet_serializer.deserialize_identification_msg(identification_msg_bytes)
+
     def recv_batch_bets_amount_msg(self) -> int:
         """
         Receives the batch bets amount message from the client socket and returns the batch 

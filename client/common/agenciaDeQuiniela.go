@@ -68,6 +68,12 @@ func (a *AgenciaDeQuiniela) CreateBet(firstName, lastName string,
 	}, nil
 }
 
+// Identificate sends the identification message (agency ID) to the server using the
+// provided client protocol.
+func (a *AgenciaDeQuiniela) Identificate(clientProtocol communication.ClientProtocol) error {
+	return clientProtocol.SendIdentificationMsg(a.id)
+}
+
 // StoreBetsBatch sends the given batch of bets to the server using the provided client protocol.
 func (a *AgenciaDeQuiniela) StoreBetsBatch(clientProtocol communication.ClientProtocol, batch []utils.Bet) error {
 	return clientProtocol.SendStoreBetsBatchMsg(batch)

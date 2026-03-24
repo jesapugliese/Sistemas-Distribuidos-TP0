@@ -213,6 +213,12 @@ func (c *Client) Start() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM)
 	defer stop()
 
+	err = c.agenciaDeQuiniela.Identificate(clientProtocol)
+	if err != nil {
+		log.Criticalf("%s", err)
+		return
+	}
+
 	err = c.processBets(ctx, clientProtocol)
 	if err != nil {
 		log.Criticalf("%s", err)
