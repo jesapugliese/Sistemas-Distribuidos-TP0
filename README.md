@@ -11,6 +11,7 @@
   - [Ejercicio N°5](#ejercicio-n5)
   - [Ejercicio N°6](#ejercicio-n6)
   - [Ejercicio N°7](#ejercicio-n7)
+- [Parte 3: Repaso de Concurrencia](#parte-3-repaso-de-concurrencia)
   - [Ejercicio N°8](#ejercicio-n8)
 
 ## Parte 1: Introducción a Docker
