@@ -63,7 +63,7 @@ Para evitar la dependencia de instalación de netcat en la máquina host y la ex
 Para que el servidor y el cliente terminen de forma graceful al recibir la signal SIGTERM, se modificó el código de ambos servicios para definir un handler que se ejecute cuando esa signal es recibida.  
 
 #### Servidor:  
-- El handler cierra los sockets y termina el proceso con código de salida 0.  
+- El handler define el atributo `self._running` en false para que el servidor deje de aceptar conexiones, y así salga del Server Loop para cerrar los sockets.   
 - Se configuró un timeout de 0.5 segundos en el socket del servidor para evitar que la llamada a `accept()` quede bloqueada indefinidamente mientras espera nuevas conexiones. Esto permite que el servidor pueda reaccionar al shutdown y finalizar correctamente antes del tiempo límite definido en el `Makefile`, donde al detener los contenedores se espera como máximo un segundo antes de forzar su terminación.
 
 #### Cliente:  

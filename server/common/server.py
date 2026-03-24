@@ -11,25 +11,9 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self._server_socket.settimeout(0.5)
         self._client_socket = None
+        self._running = True
         
         signal.signal(signal.SIGTERM, self.__sigterm_handler)
-
-    def __sigterm_handler(self, signum, frame):
-        """
-        SIGTERM signal handler
-
-        Function that handles the SIGTERM signal to gracefully 
-        shutdown the server and the current client. 
-        """
-
-        logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
-        self._server_socket.close()
-        if self._client_socket:
-            self._client_socket.close()
-        
-        logging.info('action: signal_handler | result: success | signal: SIGTERM')
-
-        exit(0)
 
     def run(self):
         """
@@ -40,11 +24,13 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        while True:
+        while self._running:
             self._client_socket = self.__accept_new_connection()
             if not self._client_socket:
                 continue
             self.__handle_client_connection()
+
+        self._graceful_shutdown()
 
     def __handle_client_connection(self):
         """
@@ -84,3 +70,25 @@ class Server:
             return None
 
         return c
+
+    def __sigterm_handler(self, signum, frame):
+        """
+        SIGTERM signal handler
+
+        Function that handles the SIGTERM signal to gracefully 
+        shutdown the server and the current client. 
+        """
+
+        logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
+        self._running = False
+        logging.info('action: signal_handler | result: success | signal: SIGTERM')
+
+    def _graceful_shutdown(self):
+        """
+        Graceful shutdown of the server.
+        """
+        
+        self._server_socket.shutdown(socket.SHUT_RDWR)
+        self._server_socket.close()
+        if self._client_socket:
+            self._client_socket.close()
