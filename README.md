@@ -10,6 +10,8 @@
 - [Parte 2: Repaso de Comunicaciones](#parte-2-repaso-de-comunicaciones)
   - [Ejercicio N°5](#ejercicio-n5)
   - [Ejercicio N°6](#ejercicio-n6)
+  - [Ejercicio N°7](#ejercicio-n7)
+  - [Ejercicio N°8](#ejercicio-n8)
 
 ## Parte 1: Introducción a Docker
 
