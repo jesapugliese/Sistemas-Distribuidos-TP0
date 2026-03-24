@@ -192,3 +192,22 @@ Se mantuvo el mismo protocolo de mensajes que en el ejercicio anterior, agregand
 
 - Mensaje de notificación de ganadores (server → client):  
    1 byte con la cantidad de ganadores seguido de 4 bytes repetidos tantas veces como ganadores haya, pues cada conjunto de 4 bytes es un número de documento.  
+
+## Parte 3: Repaso de Concurrencia
+
+### Ejercicio N°8:
+
+Se modificó el server para un correcto procesamiento de los mensajes en paralelo mediante el uso de la biblioteca `threading` de Python.
+
+#### Funcionamiento:
+
+- El hilo principal del server acepta conexiones. Cada vez que le llega una nueva conexión, genera un nuevo hilo (hilo por client) para que el client sea atentido.  
+- Cada client tiene su propia cola de tareas donde espera a que le llegue la proxima tarea a procesar. Se utilizó la cola `queue.Queue`, ya que es una cola bloqueante *thread-safe*.  
+- Las fases de ejecución de tareas del server son las siguientes:  
+   1. El server la manda la task a cada hilo por client (a través de la cola) de que reciba todos los batches de apuestas y almacenarlos.  
+      El acceso al archivo donde se almacenan las apuestas esta sincronizado mediante un lock (`threading.Lock`).
+   2. El server espera a que todos los clients hayan almacenado sus apuestas.    
+   3. Una vez almacenadas las apuestas, el server hace el sorteo.  
+   4. El server la manda la task a cada hilo por client (a través de la cola) de que notifiquen a sus respectivas agencias sus respectivos ganadores.  
+
+Se decidió hacer uso de una cola de tareas para que el server pueda asignarles tareas a cada hilo del cliente y así sincronizar dos etapas de ejecución: el almacenamiento de las apuestas, y el sorteo. Así se logran paralelizar todas las etapas de ejecución que impliquen recibo y envío de mensajes y, al mismo tiempo, hacemos que al momento del sorteo el server abra el archivo de apuestas (`bets.csv`) una única vez.  
