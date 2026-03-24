@@ -137,7 +137,14 @@ class Server:
         """
 
         logging.info('action: signal_handler | result: in_progress | signal: SIGTERM')
-        self._server_socket.close()
-        self._server_protocol.close_client_socket()
         self._running = False
         logging.info('action: signal_handler | result: success | signal: SIGTERM')
+
+    def _graceful_shutdown(self):
+        """
+        Graceful shutdown of the server.
+        """
+        
+        self._server_socket.shutdown(socket.SHUT_RDWR)
+        self._server_socket.close()
+        self._server_protocol.close_client_socket()
